@@ -666,6 +666,8 @@ textarea:focus-visible {
   border: 1px solid var(--border);
   background: #ffffff;
   padding: 20px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .filter-head,
@@ -811,6 +813,8 @@ textarea:focus-visible {
 
 .table-scroll {
   overflow-x: auto;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
 }
 
 .table-compact {
@@ -1205,7 +1209,10 @@ textarea:focus-visible {
   .shop-layout,
   .cart-layout,
   .two-col {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cart-layout > * {
+    min-width: 0;
   }
   .highlights-grid,
   .kpi-strip {
@@ -1221,7 +1228,7 @@ textarea:focus-visible {
     padding: 0 14px;
   }
   .hero-slide {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     padding: 22px 18px 12px;
     text-align: center;
   }
@@ -1235,7 +1242,7 @@ textarea:focus-visible {
   .detail-grid,
   .form-grid-2,
   .related-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .header-search {
     order: 3;
