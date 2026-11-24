@@ -405,7 +405,7 @@
     const pageItems = filtered.slice(start, start + ITEMS_PER_PAGE);
 
     document.getElementById("shop-count").textContent =
-      `Showing ${pageItems.length} of ${filtered.length} synthetic products (Page ${f.page} of ${totalPages})`;
+      `Showing ${pageItems.length} of ${filtered.length} products (Page ${f.page} of ${totalPages})`;
 
     const grid = document.getElementById("shop-grid");
     grid.innerHTML = pageItems.length
@@ -513,7 +513,7 @@
           </table>
         </div>
         <p style="font-size:17px;"><strong>Total (incl. $10.00 shipping): ${fmtUsd(inv.total)}</strong></p>
-        <p class="muted-note">Non-payment browser simulation &middot; Demo inventory decremented &amp; synced to Admin &amp; Security tab.</p>
+        <p class="muted-note">Order preview only (no payment charged) &middot; Sample inventory updated and synced to Admin &amp; Security.</p>
       `;
       return;
     }
@@ -634,7 +634,7 @@
         <h2 id="detail-title" style="margin:4px 0 8px;">${esc(prod.name)}</h2>
         <div class="product-price" style="font-size:22px;margin-bottom:10px;">${fmtUsd(prod.price)}</div>
         <p style="color:var(--body);margin:0 0 12px;">${esc(prod.description)}</p>
-        <p style="margin:0 0 8px;"><strong>Available Simulated Stock:</strong> ${prod.stock}</p>
+        <p style="margin:0 0 8px;"><strong>Available Stock:</strong> ${prod.stock}</p>
         <div class="size-row" role="group" aria-label="Select size">
           ${prod.sizes
             .map(
@@ -904,7 +904,7 @@
       persist();
       updateHeader();
       renderCheckout();
-      showToast(`Simulated order preview ${order.orderNumber} recorded.`);
+      showToast(`Order preview ${order.orderNumber} recorded locally.`);
     });
 
     document.getElementById("invoice-back-shop").addEventListener("click", () => {
@@ -925,7 +925,7 @@
       });
       persist();
       e.target.reset();
-      showToast("Simulated inquiry added to Admin & Security inbox.");
+      showToast("Demo inquiry added to the Admin inbox.");
     });
 
     // Modals & Escape key
@@ -1235,7 +1235,7 @@
       requiredSelectors: ["#home-hero-layout"],
       title: "Storefront Overview & Featured Merchandise",
       narration:
-        "NBASHOP is an educational static storefront showcasing 12 source-backed categories, 14 synthetic SKUs, and original vector SVGs in an isolated tutorial session. Watch the featured carousel advance.",
+        "NBASHOP organizes basketball gear across 12 categories with a featured merchandise carousel and curated product shelves. Watch the hero carousel advance.",
       durationMs: 4000,
       subDelayMs: 1400,
       enter() {
@@ -1255,9 +1255,9 @@
       targetSelector: "#shop-layout",
       compactTargetSelector: "#shop-toolbar",
       requiredSelectors: ["#shop-filter-sidebar", "#shop-toolbar", "#shop-grid"],
-      title: "Catalog Filtering, Search & Price Sorting",
+      title: "Product Catalog & Price Sorting",
       narration:
-        "Filter all 14 synthetic products by search term, price, stock, or category. Next, the walkthrough filters to Men's Jersey and sorts Price: Low to High ($119 to $129).",
+        "Filter products by name, price range, stock level, or category. Next, the catalog filters to Men's Jersey and sorts by Price: Low to High ($119 to $129).",
       durationMs: 4400,
       subDelayMs: 1400,
       enter() {
@@ -1282,9 +1282,9 @@
       compactTargetSelector: "#detail-modal .modal-dialog",
       requiredSelectors: ["#detail-content", "#det-add-btn"],
       isModalStage: true,
-      title: "Product Detail, Size, Quantity & Add to Cart",
+      title: "Product Details, Size & Add to Cart",
       narration:
-        "Inspect original SVG artwork, available stock, and sizing. Watch the tutorial choose size L, raise quantity to 2, and add Apex Crimson Court Jersey #23 to the isolated cart.",
+        "Inspect product details, available stock, and sizing options. Next, select size L, raise quantity to 2, and add Apex Crimson Court Jersey #23 to the cart.",
       durationMs: 5000,
       preSubDelayMs: 850,
       subDelayMs: 1500,
@@ -1336,7 +1336,7 @@
         setTutorialControlFocus(null);
         const qty = cartUnitCount();
         setTutorialActionStatus(
-          `Added ${state.detailQty} \u00d7 Apex Crimson Court Jersey #23 (Size ${state.detailSize}) \u00b7 Isolated Cart: ${qty} items`
+          `Added ${state.detailQty} \u00d7 Apex Crimson Court Jersey #23 (Size ${state.detailSize}) \u00b7 Cart: ${qty} items`
         );
         updateTutorialAdaptiveLayout();
       },
@@ -1347,9 +1347,9 @@
       targetSelector: "#cart-layout",
       compactTargetSelector: "#cart-items-card",
       requiredSelectors: ["#cart-items-card", "#cart-summary-card"],
-      title: "Stock-Bounded Shopping Cart & Totals",
+      title: "Shopping Cart & Order Totals",
       narration:
-        "Cart quantities stay bounded by simulated catalog stock and automatically add the original $10.00 flat shipping rule. Watch quantity increase from 2 to 3 ($367.00 total).",
+        "Quantity controls respect available sample inventory and automatically add the $10.00 flat shipping fee. Watch quantity increase from 2 to 3 ($367.00 total).",
       durationMs: 4400,
       subDelayMs: 1400,
       enter() {
@@ -1374,9 +1374,9 @@
       targetSelector: "#checkout-form-section",
       compactTargetSelector: "#checkout-form",
       requiredSelectors: ["#checkout-form", "#checkout-summary-card"],
-      title: "Non-Payment Synthetic Checkout Preview",
+      title: "Checkout Preview (No Payment Collected)",
       narration:
-        "Legacy raw card and IBAN fields were removed in Phase A. Next, Fill Synthetic Demo Info populates a fictional @example.invalid shopper alongside the live order summary.",
+        "Payment card and IBAN inputs are omitted in this browser preview. Next, sample shipping details populate alongside the order summary.",
       durationMs: 4400,
       subDelayMs: 1400,
       enter() {
@@ -1400,9 +1400,9 @@
       targetSelector: "#invoice-section",
       compactTargetSelector: "#invoice-section",
       requiredSelectors: ["#invoice-section", "#invoice-body"],
-      title: "Simulated Order Receipt & Stock Deduction",
+      title: "Order Receipt & Inventory Update",
       narration:
-        "Submitting the simulated preview generates a local NBA-XXXXXXXX receipt, deducts isolated catalog inventory (34 to 31 units), and syncs to the Admin preview with zero real payment.",
+        "Submitting generates a local NBA-XXXXXXXX receipt, updates sample inventory (34 to 31 units), and records the order in Administration with no payment charged.",
       durationMs: 4400,
       enter() {
         closeTutorialModals();
@@ -1417,9 +1417,9 @@
       targetSelector: "#contact-layout",
       compactTargetSelector: "#contact-form",
       requiredSelectors: ["#contact-form"],
-      title: "Simulated Contact Inquiry & Demo Account",
+      title: "Customer Inquiries & Demo Account",
       narration:
-        "The contact form mirrors contact.php to admin_messages.php locally. Next, a synthetic @example.invalid inquiry submits to the isolated Admin inbox and signs in @demo_shopper.",
+        "Storefront inquiries route locally to the Admin inbox with zero external transmission. Next, a sample inquiry is submitted and the header switches to @demo_shopper.",
       durationMs: 4400,
       subDelayMs: 1400,
       enter() {
@@ -1436,9 +1436,9 @@
       targetSelector: "#admin-overview-zone",
       compactTargetSelector: "#admin-kpi-strip",
       requiredSelectors: ["#admin-kpi-strip", "#admin-stock-card", "#admin-orders-card"],
-      title: "Sandboxed Admin Preview & Order Visibility",
+      title: "Administration, Orders & Inquiries",
       narration:
-        "Admin & Security reflects the isolated tutorial transactions live: simulated order volume, updated inventory counts, the newly placed NBA-XXXXXXXX receipt, and the synced inbox inquiry.",
+        "The Admin dashboard updates with the demo order volume, category inventory counts, the newly recorded NBA-XXXXXXXX order, and the synced customer inquiry.",
       durationMs: 5800,
       subDelayMs: 1800,
       secondSubDelayMs: 3600,
@@ -1478,9 +1478,9 @@
       targetSelector: "#admin-security-card",
       compactTargetSelector: "#admin-security-card",
       requiredSelectors: ["#admin-security-card"],
-      title: "Private PHP/MySQL Security Remediation Matrix",
+      title: "Backend Security Summary",
       narration:
-        "This matrix documents historical Phase A verification of the separate private PHP 8.3 / MySQL 8.0 / Apache 2.4 codebase (14/14 static & 17/17 CI runtime tests) — not executed in this static browser demo.",
+        "This table documents security remediations historically verified on the separate private PHP/MySQL codebase (14/14 static and 17/17 CI runtime tests; not executed in this browser preview).",
       durationMs: 4600,
       enter() {
         closeTutorialModals();
@@ -1493,9 +1493,9 @@
       targetSelector: "#home-hero-layout",
       compactTargetSelector: "#home-hero-layout",
       requiredSelectors: ["#home-hero-layout"],
-      title: "Walkthrough Complete — Explore Manually",
+      title: "Walkthrough Complete",
       narration:
-        "You have toured NBASHOP's synthetic catalog, product detail modal, stock-bounded cart, non-payment checkout, receipt, Admin preview, and security audit. Click Replay or Exit to restore your untouched manual session.",
+        "You have toured NBASHOP's catalog, product details, shopping cart, checkout preview, administration dashboard, and backend security summary. Click Replay or Exit to explore freely.",
       durationMs: 0,
       enter() {
         closeTutorialModals();

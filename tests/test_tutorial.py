@@ -970,7 +970,7 @@ class NBAShopTutorialTests(unittest.TestCase):
         # After resume: Add to Cart runs once, shows confirmation status, preserves localStorage
         self.assertEqual(out["p4AfterAdd"]["cartUnits"], 2)
         self.assertIn("Added 2", out["p4AfterAdd"]["actionStatusText"])
-        self.assertIn("Isolated Cart: 2", out["p4AfterAdd"]["actionStatusText"])
+        self.assertIn("Cart: 2", out["p4AfterAdd"]["actionStatusText"])
         self.assertTrue(out["statusAfterExitHidden"])
         self.assertTrue(out["storageUntouched"])
 

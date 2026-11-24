@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NBASHOP — Basketball E-Commerce &amp; Security Portfolio Showcase</title>
+  <title>NBASHOP — Basketball E-Commerce</title>
   <meta
     name="description"
-    content="Interactive static portfolio showcase for NBASHOP: source-faithful EShopper basketball storefront, synthetic catalog, stock-bounded cart &amp; non-payment order preview, and PHP/MySQL security remediation audit."
+    content="NBASHOP basketball e-commerce web application: product catalog, shopping cart, order workflows, administration panel, and PHP/MySQL backend security (interactive browser preview)."
   />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -31,9 +31,8 @@
           <div>
             <div class="pf-brand-title-row">
               <span class="pf-brand-name">NBASHOP</span>
-              <span class="pf-badge mono">STATIC DEMO</span>
             </div>
-            <p class="pf-brand-sub">Basketball E-Commerce &amp; PHP/MySQL Security Showcase</p>
+            <p class="pf-brand-sub">Basketball E-Commerce</p>
           </div>
         </div>
       </div>
@@ -54,24 +53,24 @@
   <section class="portfolio-hero" aria-labelledby="pfHeroHeading">
     <div class="container pf-hero-grid">
       <div class="pf-hero-copy">
-        <p class="pf-hero-kicker">E-Commerce Architecture &amp; Security &middot; Synthetic Storefront</p>
+        <p class="pf-hero-kicker">Basketball E-Commerce</p>
         <h1 id="pfHeroHeading" class="pf-hero-title">NBA<em>SHOP</em></h1>
         <p class="pf-hero-desc">
-          A sanitized basketball merchandise storefront and security-audit showcase built over 12 source categories, 14 synthetic SKUs, and original inline vector artwork. Launch the guided tutorial in an isolated session or browse the storefront, cart, non-payment checkout, and Admin &amp; Security audit directly.
+          A basketball merchandise storefront and administration system featuring 12 product categories, catalog filtering, a shopping cart, order workflows, and PHP/MySQL backend security work. Browse the storefront directly or launch the guided walkthrough.
         </p>
       </div>
       <aside class="pf-hero-meta" aria-label="Project summary">
         <div class="pf-meta-item">
-          <span class="pf-meta-label">Catalog &amp; Flows</span>
-          <span class="pf-meta-value">12 Categories &middot; 14 Synthetic SKUs &middot; Stock-Bounded Cart</span>
+          <span class="pf-meta-label">Stack</span>
+          <span class="pf-meta-value">PHP &middot; MySQL &middot; Vanilla JS</span>
         </div>
         <div class="pf-meta-item">
-          <span class="pf-meta-label">Private Backend Audit</span>
-          <span class="pf-meta-value">14/14 Static &middot; 17/17 CI Runtime Security Tests</span>
+          <span class="pf-meta-label">Storefront</span>
+          <span class="pf-meta-value">Product Catalog &middot; Shopping Cart &middot; Order Preview</span>
         </div>
         <div class="pf-meta-item">
-          <span class="pf-meta-label">Simulation Boundary</span>
-          <span class="pf-meta-value">Zero Real Payments &middot; Not Affiliated with NBA</span>
+          <span class="pf-meta-label">Administration</span>
+          <span class="pf-meta-value">Inventory Overview &middot; Orders &middot; Backend Security</span>
         </div>
       </aside>
     </div>
@@ -82,10 +81,10 @@
     <div class="container ribbon-inner">
       <div class="ribbon-left">
         <span class="ribbon-badge mono">STATIC DEMO</span>
-        <span>Synthetic catalog &amp; simulated checkout &middot; <strong>Not affiliated with the NBA</strong> &middot; <strong>No live payments</strong></span>
+        <span>Browser preview with sample data &middot; <strong>Not affiliated with the NBA</strong> &middot; <strong>No live payments</strong></span>
       </div>
       <div class="ribbon-right">
-        <span class="ribbon-meta">Private PHP/MySQL source &middot; Original vector SVG art</span>
+        <span class="ribbon-meta">Private PHP/MySQL backend &middot; Original SVG artwork</span>
       </div>
     </div>
   </div>
@@ -180,20 +179,20 @@
       <!-- Value Strip (Original EShopper Storefront Highlights) -->
       <div id="home-highlights" class="highlights-grid">
         <div class="highlight-card">
-          <strong>12 Source Categories</strong>
-          <span>Mirrors original PHP <code>categories</code> structure</span>
+          <strong>Product Catalog</strong>
+          <span>12 categories of jerseys, apparel, footwear &amp; gear</span>
         </div>
         <div class="highlight-card">
           <strong>Original Vector Art</strong>
-          <span>Copyright-safe illustrations &middot; zero brand marks</span>
+          <span>Custom inline SVG product illustrations</span>
         </div>
         <div class="highlight-card">
-          <strong>Stock-Bounded Cart</strong>
-          <span>Simulated inventory updates live on checkout</span>
+          <strong>Shopping Cart</strong>
+          <span>Inventory-aware quantities &amp; automatic order totals</span>
         </div>
         <div class="highlight-card">
-          <strong>Phase A Verified</strong>
-          <span>48/48 <code>php -l</code> &amp; 17/17 CI runtime security tests</span>
+          <strong>Backend Security</strong>
+          <span>Prepared statements, CSRF &amp; upload guards in PHP/MySQL</span>
         </div>
       </div>
 
@@ -239,7 +238,7 @@
 
         <div id="shop-results" class="shop-results">
           <div id="shop-toolbar" class="shop-toolbar">
-            <div class="results-summary" id="shop-count">Showing 0 synthetic products</div>
+            <div class="results-summary" id="shop-count">Showing 0 products</div>
             <div class="sort-wrap">
               <label for="shop-sort">Sort by</label>
               <select id="shop-sort">
@@ -263,7 +262,6 @@
         <div id="cart-items-card" class="card-panel">
           <div class="panel-title-row">
             <h2>Shopping Cart</h2>
-            <span class="tag-pill">Simulated Local State</span>
           </div>
           <div class="table-scroll">
             <table class="clean-table">
@@ -288,17 +286,17 @@
             <strong id="cart-subtotal">$0.00</strong>
           </div>
           <div class="summary-row">
-            <span>Flat Shipping (original PHP rule)</span>
+            <span>Shipping</span>
             <strong id="cart-shipping">$0.00</strong>
           </div>
           <div class="summary-row summary-total">
-            <span>Total</span>
+            <span>Order Total</span>
             <strong id="cart-total">$0.00</strong>
           </div>
           <button type="button" class="btn btn-primary btn-block" id="proceed-checkout-btn">
             Proceed To Order Preview
           </button>
-          <p class="muted-note">Inventory is validated against simulated catalog stock. No payment is charged.</p>
+          <p class="muted-note">Quantities respect available sample inventory. No payment is charged.</p>
         </aside>
       </div>
     </section>
@@ -306,16 +304,16 @@
     <!-- ==================== VIEW 4: CHECKOUT PREVIEW & INVOICE ==================== -->
     <section id="view-checkout" class="view-panel" role="tabpanel" aria-labelledby="tab-checkout" hidden>
       <div class="notice-banner notice-warn">
-        <strong>Non-Payment Checkout Simulation:</strong>
-        Raw credit card, CVC, and IBAN fields from the legacy student code were removed in Phase A.
-        This browser showcase does not collect payment details, does not transmit personal data, and generates a local order preview receipt only.
+        <strong>Checkout Preview (No Payment Collected):</strong>
+        Payment card and IBAN inputs are intentionally omitted in this browser preview.
+        Submitting generates a local order receipt and updates sample inventory without transmitting personal data.
       </div>
 
       <div id="checkout-form-section" class="cart-layout">
         <form id="checkout-form" class="card-panel">
           <div class="panel-title-row">
-            <h2>Simulated Shipping Details</h2>
-            <button type="button" class="btn btn-outline btn-sm" id="fill-demo-checkout">Fill Synthetic Demo Info</button>
+            <h2>Shipping Details (Demo)</h2>
+            <button type="button" class="btn btn-outline btn-sm" id="fill-demo-checkout">Fill Sample Info</button>
           </div>
           <div class="form-grid-2">
             <div class="field-group">
@@ -365,10 +363,10 @@
             </div>
           </div>
           <div class="payment-disabled-box">
-            <strong>Payment Mode:</strong> Demo Order Preview (No Payment Captured &mdash; zero card/IBAN inputs)
+            <strong>Payment Mode:</strong> Order Preview Only &mdash; no payment, card, or IBAN details collected
           </div>
           <button type="submit" class="btn btn-primary btn-block" id="place-order-btn">
-            Place Simulated Order Preview
+            Place Order Preview
           </button>
         </form>
 
@@ -394,7 +392,7 @@
       <div id="invoice-section" class="card-panel invoice-card" hidden>
         <div class="panel-title-row">
           <div>
-            <span class="tag-pill tag-ok">SIMULATED ORDER PREVIEW CONFIRMED</span>
+            <span class="tag-pill tag-ok">ORDER PREVIEW CONFIRMED</span>
             <h2 style="margin-top: 6px;">Order Preview Receipt</h2>
           </div>
           <button type="button" class="btn btn-outline" id="invoice-back-shop">Continue Browsing</button>
@@ -408,8 +406,8 @@
       <div id="contact-layout" class="cart-layout">
         <form id="contact-form" class="card-panel">
           <div class="panel-title-row">
-            <h2>Contact Storefront (Simulated)</h2>
-            <span class="tag-pill">Syncs to Admin Preview Inbox</span>
+            <h2>Customer Inquiries</h2>
+            <span class="tag-pill">Syncs to Local Admin Inbox</span>
           </div>
           <div class="field-group">
             <label for="ct-name">Name *</label>
@@ -427,20 +425,19 @@
             <label for="ct-message">Message *</label>
             <textarea id="ct-message" rows="5" placeholder="Write a sample inquiry..." required></textarea>
           </div>
-          <button type="submit" class="btn btn-primary">Send Simulated Message</button>
+          <button type="submit" class="btn btn-primary">Send Demo Message</button>
         </form>
 
         <aside class="card-panel">
-          <h3>Demo Store Details</h3>
+          <h3>Storefront Info (Demo)</h3>
           <p class="muted-note">
-            Submitting the form appends your message locally to the Admin &amp; Security inbox preview
-            (mirroring <code>contact.php</code> &rarr; <code>admin_messages.php</code>). Zero data leaves your browser.
+            Submitting this form adds the message locally to the Admin inbox preview. Zero data leaves your browser.
           </p>
           <ul class="info-list">
-            <li><strong>Address:</strong> 100 Courtway Blvd, Sample City (Fictional Demo)</li>
+            <li><strong>Address:</strong> 100 Courtway Blvd, Sample City (Sample)</li>
             <li><strong>Email:</strong> demo@example.invalid</li>
-            <li><strong>Phone:</strong> +1 555-0100 (Fictional Demo)</li>
-            <li><strong>PHP Backend:</strong> Prepared statements + CSRF + <code>e()</code> escaping</li>
+            <li><strong>Phone:</strong> +1 555-0100 (Sample)</li>
+            <li><strong>PHP Backend:</strong> Prepared statements, CSRF protection &amp; output escaping</li>
           </ul>
         </aside>
       </div>
@@ -449,40 +446,39 @@
     <!-- ==================== VIEW 6: ADMIN PREVIEW & SECURITY AUDIT ==================== -->
     <section id="view-admin" class="view-panel" role="tabpanel" aria-labelledby="tab-admin" hidden>
       <div class="notice-banner notice-info">
-        <strong>Sandboxed Admin Preview &amp; Phase A Security Audit:</strong>
-        Mirrors <code>admin_panel/dashboard.php</code>, <code>order_list.php</code>, and <code>admin_messages.php</code> using
-        synthetic browser state. All metrics reflect simulated fixture/session totals &mdash; not real business revenue.
+        <strong>Administration &amp; Backend Security:</strong>
+        Mirrors the PHP admin dashboard, order list, and customer inbox using local browser state. Metrics reflect sample session activity rather than real store revenue.
       </div>
 
       <div id="admin-overview-zone">
       <div id="admin-kpi-strip" class="kpi-strip">
         <div class="kpi-box">
-          <div class="kpi-lbl">Simulated Order Volume</div>
+          <div class="kpi-lbl">Order Volume (Demo)</div>
           <div class="kpi-val" id="adm-sales">$191.00</div>
         </div>
         <div class="kpi-box">
-          <div class="kpi-lbl">Demo Orders</div>
+          <div class="kpi-lbl">Orders</div>
           <div class="kpi-val" id="adm-orders">1</div>
         </div>
         <div class="kpi-box">
-          <div class="kpi-lbl">Simulated Stock Units</div>
+          <div class="kpi-lbl">Stock Units</div>
           <div class="kpi-val" id="adm-stock">571</div>
         </div>
         <div class="kpi-box">
-          <div class="kpi-lbl">Demo Inbox Messages</div>
+          <div class="kpi-lbl">Inbox Messages</div>
           <div class="kpi-val" id="adm-msgs">1</div>
         </div>
       </div>
 
       <div id="admin-two-col" class="two-col">
         <section id="admin-stock-card" class="card-panel">
-          <h3>Category Stock Distribution</h3>
+          <h3>Inventory Overview</h3>
           <div class="bar-list" id="adm-category-bars"></div>
         </section>
 
         <section id="admin-orders-card" class="card-panel">
-          <h3>Simulated Orders &amp; Inquiries</h3>
-          <h4 class="sub-heading">Recent Demo Orders</h4>
+          <h3>Orders &amp; Inquiries</h3>
+          <h4 class="sub-heading">Recent Orders</h4>
           <div id="adm-orders-wrap" class="table-scroll table-compact">
             <table class="clean-table">
               <thead>
@@ -492,7 +488,7 @@
             </table>
           </div>
           <div id="admin-inbox-section" class="admin-inbox-section">
-            <h4 id="admin-inbox-heading" class="sub-heading" style="margin-top: 16px;">Admin Inbox Messages</h4>
+            <h4 id="admin-inbox-heading" class="sub-heading" style="margin-top: 16px;">Customer Inquiries</h4>
             <div id="adm-messages-wrap" class="table-scroll table-compact">
               <table class="clean-table">
                 <thead>
@@ -508,8 +504,8 @@
 
       <section id="admin-security-card" class="card-panel" style="margin-top: 18px;">
         <div class="panel-title-row">
-          <h3>Phase A Security Remediation &amp; Verification Matrix</h3>
-          <span class="tag-pill tag-ok">17/17 CI Runtime &amp; 14/14 Offline Tests Passing</span>
+          <h3>Backend Security (Private PHP/MySQL Repository)</h3>
+          <span class="tag-pill tag-ok">14/14 Static &amp; 17/17 CI Runtime Tests</span>
         </div>
         <div class="table-scroll">
           <table class="clean-table">
@@ -539,8 +535,8 @@
   <div class="modal-backdrop" id="account-modal" role="dialog" aria-modal="true" aria-labelledby="account-modal-title" hidden>
     <div class="modal-dialog modal-sm">
       <button type="button" class="modal-close" id="account-close" aria-label="Close demo account dialog">&times;</button>
-      <h3 id="account-modal-title">Simulated Demo Account</h3>
-      <p class="muted-note">Local browser simulation only. Never enter real passwords or personal credentials.</p>
+      <h3 id="account-modal-title">Demo Account</h3>
+      <p class="muted-note">Local browser preview only. Never enter real passwords or personal credentials.</p>
       <div id="account-modal-body"></div>
     </div>
   </div>
@@ -555,11 +551,11 @@
         <span class="footer-sep" aria-hidden="true">&middot;</span>
         <a href="THIRD-PARTY-NOTICES.md">Notices (Markdown)</a>
         <span class="footer-sep" aria-hidden="true">&middot;</span>
-        <a href="https://github.com/erturkeryavuz/nbashop-demo" target="_blank" rel="noopener noreferrer">Demo Repository</a>
+        <a href="https://github.com/erturkeryavuz/nbashop-demo" target="_blank" rel="noopener noreferrer">GitHub Repository</a>
       </div>
       <div class="footer-meta">
-        <strong>NBASHOP</strong> &middot; Independent Student Portfolio Showcase by Ert&uuml;rk Eryavuz &middot;
-        Not affiliated with the NBA or any sports brand &middot; Storefront visual heritage adapted from EShopper by
+        <strong>NBASHOP</strong> &middot; Portfolio Project by Ert&uuml;rk Eryavuz &middot;
+        Not affiliated with the NBA or any sports brand &middot; Layout heritage adapted from EShopper by
         <a href="https://htmlcodex.com" target="_blank" rel="noopener noreferrer">HTML Codex</a> (CC-BY 4.0).
       </div>
     </div>
