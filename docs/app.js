@@ -321,26 +321,6 @@
   function renderHome() {
     renderCategoryRail();
     renderHero();
-
-    const shelves = [
-      { title: "Top Selling Products", items: state.products.slice().sort((a, b) => b.sales - a.sales).slice(0, 3), pfx: "ts" },
-      { title: "Top Stock Products", items: state.products.slice().sort((a, b) => b.stock - a.stock).slice(0, 3), pfx: "st" },
-      { title: "Top Priced Products", items: state.products.slice().sort((a, b) => b.price - a.price).slice(0, 3), pfx: "tp" },
-      { title: "Cheapest Products", items: state.products.slice().sort((a, b) => a.price - b.price).slice(0, 3), pfx: "ch" },
-    ];
-
-    document.getElementById("home-shelves").innerHTML = shelves
-      .map(
-        (sh) => `
-          <section class="shelf-block">
-            <h2 class="section-heading"><span>${esc(sh.title)}</span></h2>
-            <div class="product-grid">
-              ${sh.items.map((p) => buildProductCardHtml(p, sh.pfx)).join("")}
-            </div>
-          </section>
-        `
-      )
-      .join("");
   }
 
   // ---------- View 2: Shop Catalog ----------
@@ -1235,7 +1215,7 @@
       requiredSelectors: ["#home-hero-layout"],
       title: "Storefront Overview & Featured Merchandise",
       narration:
-        "NBASHOP organizes basketball gear across 12 categories with a featured merchandise carousel and curated product shelves. Watch the hero carousel advance.",
+        "NBASHOP organizes basketball gear across 12 browsable categories alongside an interactive featured-product carousel. Watch the hero carousel advance.",
       durationMs: 4000,
       subDelayMs: 1400,
       enter() {

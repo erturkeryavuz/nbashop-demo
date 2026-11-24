@@ -253,7 +253,7 @@ function bootInstance(sharedStorage) {{
   // Required DOM skeleton matching docs/index.html
   [
     "header-cart-badge", "account-trigger-label", "toast-region", "home-category-rail",
-    "hero-slide", "hero-dots", "home-shelves", "filter-categories", "shop-count",
+    "hero-slide", "hero-dots", "filter-categories", "shop-count",
     "shop-grid", "shop-pagination", "cart-table-body", "cart-subtotal", "cart-shipping",
     "cart-total", "checkout-summary-items", "co-subtotal", "co-shipping", "co-total",
     "invoice-body", "adm-sales", "adm-orders", "adm-stock", "adm-msgs",
@@ -577,6 +577,69 @@ class NBAShopTutorialTests(unittest.TestCase):
         self.assertIn("No live payments", html)
         self.assertIn("https://htmlcodex.com", html)
         self.assertIn("CC-BY 4.0", html)
+
+        # Simplified Home: redundant curated product shelves removed without breaking Home/Catalog/Stage 1
+        app_js = (DOCS / "app.js").read_text(encoding="utf-8")
+        self.assertNotIn('id="home-shelves"', html)
+        self.assertNotIn("home-shelves", app_js)
+        self.assertNotIn(".shelf-block", css)
+        for removed_heading in (
+            "Top Selling Products",
+            "Top Stock Products",
+            "Top Priced Products",
+            "Cheapest Products",
+        ):
+            self.assertNotIn(removed_heading, app_js)
+            self.assertNotIn(removed_heading, html)
+
+        home_check = _run_node_harness(
+            """
+            const app = bootInstance(localStorage);
+            const hasShelvesEl = app.document.getElementById("home-shelves") !== null;
+            const catButtons = app.byId.get("home-category-rail").querySelectorAll("[data-jump-cat]");
+            const heroBefore = app.byId.get("hero-slide").innerHTML;
+            app.byId.get("hero-next").click();
+            const heroAfterNext = app.byId.get("hero-slide").innerHTML;
+            app.byId.get("hero-prev").click();
+            const heroAfterPrev = app.byId.get("hero-slide").innerHTML;
+
+            // Category navigation opens Shop Catalog filtered to category 1, and Reset shows all 14 products
+            catButtons[0].click();
+            const shopVisibleAfterCat = !app.byId.get("view-shop").hidden;
+            const filteredCount = app.byId.get("shop-count").textContent;
+            app.byId.get("reset-filters-btn").click();
+            const allCount = app.byId.get("shop-count").textContent;
+
+            // Stage 1 narration reflects simplified Home without referencing curated shelves
+            app.btnWatch.click();
+            const stage1Narration = app.byId.get("tutorialNarration").textContent;
+            const stage1Total = app.api.getState().totalStages;
+            app.btnExit.click();
+
+            return {
+              hasShelvesEl,
+              catCount: catButtons.length,
+              carouselAdvanced: heroBefore !== heroAfterNext,
+              carouselReturned: heroBefore === heroAfterPrev,
+              shopVisibleAfterCat,
+              filteredCount,
+              allCount,
+              stage1Narration,
+              stage1Total,
+            };
+            """
+        )
+        self.assertFalse(home_check["hasShelvesEl"])
+        self.assertGreaterEqual(home_check["catCount"], 12)
+        self.assertTrue(home_check["carouselAdvanced"])
+        self.assertTrue(home_check["carouselReturned"])
+        self.assertTrue(home_check["shopVisibleAfterCat"])
+        self.assertIn("Showing", home_check["filteredCount"])
+        self.assertIn("of 14 products", home_check["allCount"])
+        self.assertEqual(home_check["stage1Total"], 10)
+        self.assertNotIn("shelves", home_check["stage1Narration"].lower())
+        self.assertIn("categories", home_check["stage1Narration"].lower())
+        self.assertIn("carousel", home_check["stage1Narration"].lower())
 
     def test_tutorial_session_persistence_isolation_and_exact_manual_restoration(self):
         out = _run_node_harness(
