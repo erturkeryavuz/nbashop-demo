@@ -14,15 +14,38 @@
     return JSON.parse(JSON.stringify(obj));
   }
 
+  function safeReadRawStorage() {
+    try {
+      return localStorage.getItem(STORAGE_KEY);
+    } catch (_) {
+      return null;
+    }
+  }
+
   function loadPersisted() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = safeReadRawStorage();
       if (!raw) return null;
       return JSON.parse(raw);
     } catch (_) {
       return null;
     }
   }
+
+  function defaultFilters() {
+    return {
+      search: "",
+      priceMin: "",
+      priceMax: "",
+      stockMin: "",
+      stockMax: "",
+      categories: [],
+      sort: "latest",
+      page: 1,
+    };
+  }
+
+  let tutorialPersistenceSuspended = false;
 
   const saved = loadPersisted();
   const state = {
@@ -36,16 +59,7 @@
     orders: (saved && Array.isArray(saved.orders)) ? saved.orders : clone(SEED.initialOrders),
     messages: (saved && Array.isArray(saved.messages)) ? saved.messages : clone(SEED.initialMessages),
     demoUser: (saved && saved.demoUser) ? saved.demoUser : null,
-    filters: {
-      search: "",
-      priceMin: "",
-      priceMax: "",
-      stockMin: "",
-      stockMax: "",
-      categories: [],
-      sort: "latest",
-      page: 1,
-    },
+    filters: defaultFilters(),
     detailProductId: null,
     detailQty: 1,
     detailSize: "",
@@ -53,6 +67,8 @@
   };
 
   function persist() {
+    // Hard tutorial persistence isolation boundary: Watch Tutorial never writes to localStorage.
+    if (tutorialPersistenceSuspended) return;
     try {
       localStorage.setItem(
         STORAGE_KEY,
@@ -274,7 +290,7 @@
     document.getElementById("hero-slide").innerHTML = `
       <div class="hero-copy">
         <span class="hero-eyebrow">Top Selling &middot; ${esc(getCategoryName(active.categoryId))}</span>
-        <h1>${esc(active.name)}</h1>
+        <h2 class="hero-slide-title">${esc(active.name)}</h2>
         <p>${esc(active.description)}</p>
         <div class="hero-price">${fmtUsd(active.price)}</div>
         <div class="hero-actions">
@@ -555,7 +571,7 @@
       .reverse()
       .map(
         (o) => `
-          <tr>
+          <tr class="${tutorial && tutorial.active && tutorial.orderPlacedNumber === o.orderNumber ? "tutorial-row-highlight" : ""}">
             <td><code>${esc(o.orderNumber)}</code></td>
             <td>${esc(o.customer)}</td>
             <td class="num">${fmtUsd(o.total)}</td>
@@ -570,13 +586,19 @@
       .slice()
       .reverse()
       .map(
-        (m) => `
-          <tr>
-            <td>${esc(m.name)}</td>
-            <td>${esc(m.subject)}</td>
-            <td>${esc(m.message)}</td>
-          </tr>
-        `
+        (m) => {
+          const isTutInquiry =
+            Boolean(tutorial && tutorial.active && tutorial.inquirySubmitted) &&
+            m.name === "Taylor Example" &&
+            m.subject === "Jersey Sizing Check (Demo)";
+          return `
+            <tr class="${isTutInquiry ? "tutorial-row-highlight" : ""}"${isTutInquiry ? ' data-tutorial-inquiry="true"' : ""}>
+              <td>${esc(m.name)}</td>
+              <td>${esc(m.subject)}</td>
+              <td>${esc(m.message)}</td>
+            </tr>
+          `;
+        }
       )
       .join("");
 
@@ -918,13 +940,1503 @@
     });
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
-        closeDetailModal();
-        closeAccountModal();
+        const detModal = document.getElementById("detail-modal");
+        const accModal = document.getElementById("account-modal");
+        const modalWasOpen = Boolean((detModal && !detModal.hidden) || (accModal && !accModal.hidden));
+        if (modalWasOpen) {
+          closeDetailModal();
+          closeAccountModal();
+          if (tutorial.active && tutorial.playing) {
+            pauseTutorial();
+          }
+          return;
+        }
+        if (tutorial.active) {
+          e.preventDefault();
+          exitTutorial({ restoreFocus: true });
+        }
+      }
+      if (tutorial.active) {
+        const tag = e.target && e.target.tagName ? e.target.tagName.toUpperCase() : "";
+        if (tag !== "INPUT" && tag !== "SELECT" && tag !== "TEXTAREA") {
+          if (e.key === "PageDown" || e.key === "PageUp" || e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "Home" || e.key === "End" || e.key === " ") {
+            tutorial.programmaticScrollUntil = 0;
+            tutorial.modalProgrammaticScrollUntil = 0;
+            tutorial.userScrollIntentUntil = Date.now() + 900;
+            tutorial.modalUserScrollIntentUntil = Date.now() + 900;
+          }
+        }
       }
     });
   }
 
+  // ---------- Interactive Watch Tutorial, Persistence Isolation & Adaptive Viewport Fitting ----------
+  const TUTORIAL_CSS_VARS = ["--tut-dock-offset", "--tut-avail-h"];
+
+  const tutorial = {
+    active: false,
+    playing: false,
+    completed: false,
+    stageIndex: 0,
+    preSubActionDone: false,
+    subActionDone: false,
+    preSecondSubActionDone: false,
+    secondSubActionDone: false,
+    stageToken: 0,
+    subTimers: [],
+    advanceTimer: null,
+    resizeSettleTimer: null,
+    driving: false,
+    userScrolledAway: false,
+    modalUserScrolledAway: false,
+    lastGuidedScrollY: 0,
+    modalLastGuidedScrollTop: 0,
+    programmaticScrollUntil: 0,
+    modalProgrammaticScrollUntil: 0,
+    resizeIgnoreScrollUntil: 0,
+    userScrollIntentUntil: 0,
+    modalUserScrollIntentUntil: 0,
+    lastViewportW: window.innerWidth || 0,
+    lastViewportH: window.innerHeight || 0,
+    activeTargetSelector: null,
+    subFocusSelector: null,
+    resolvedFocusSelector: null,
+    modalFocusSelectors: null,
+    modalPhase: 0,
+    actionStatusText: "",
+    manualSnapshot: null,
+    orderPlacedNumber: null,
+    inquirySubmitted: false,
+    adaptiveLayout: {
+      density: "standard",
+      dockOffset: 96,
+      availH: 600,
+    },
+  };
+
+  function prefersReducedMotion() {
+    return (
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    );
+  }
+
+  function clearTutorialTimers() {
+    while (tutorial.subTimers.length > 0) {
+      clearTimeout(tutorial.subTimers.pop());
+    }
+    if (tutorial.advanceTimer !== null) {
+      clearTimeout(tutorial.advanceTimer);
+      tutorial.advanceTimer = null;
+    }
+  }
+
+  function clearSpotlight() {
+    document.querySelectorAll(".tutorial-spotlight").forEach((el) => {
+      el.classList.remove("tutorial-spotlight");
+    });
+    document.querySelectorAll(".tutorial-control-focus").forEach((el) => {
+      el.classList.remove("tutorial-control-focus");
+    });
+  }
+
+  function setTutorialControlFocus(selectors) {
+    document.querySelectorAll(".tutorial-control-focus").forEach((el) => {
+      el.classList.remove("tutorial-control-focus");
+    });
+    if (!selectors) return;
+    const list = Array.isArray(selectors) ? selectors : [selectors];
+    list.forEach((sel) => {
+      const el = document.querySelector(sel);
+      if (el) el.classList.add("tutorial-control-focus");
+    });
+  }
+
+  function clearTutorialToasts() {
+    const tr = document.getElementById("toast-region");
+    if (tr) tr.innerHTML = "";
+  }
+
+  function setTutorialActionStatus(text) {
+    tutorial.actionStatusText = text || "";
+    const statusEl = document.getElementById("tutorialActionStatus");
+    if (!statusEl) return;
+    if (tutorial.actionStatusText && tutorial.active) {
+      statusEl.textContent = tutorial.actionStatusText;
+      statusEl.hidden = false;
+    } else {
+      statusEl.textContent = "";
+      statusEl.hidden = true;
+    }
+  }
+
+  function closeTutorialModals() {
+    closeDetailModal();
+    closeAccountModal();
+  }
+
+  function captureManualSnapshot() {
+    tutorial.manualSnapshot = {
+      rawStorage: safeReadRawStorage(),
+      view: state.view,
+      heroIdx: state.heroIdx,
+      jerseysOpen: state.jerseysOpen,
+      products: clone(state.products),
+      cart: clone(state.cart),
+      orders: clone(state.orders),
+      messages: clone(state.messages),
+      demoUser: clone(state.demoUser),
+      filters: clone(state.filters),
+      lastInvoice: clone(state.lastInvoice),
+    };
+  }
+
+  function clearCheckoutAndContactForms() {
+    const coForm = document.getElementById("checkout-form");
+    if (coForm && typeof coForm.reset === "function") coForm.reset();
+    const ctForm = document.getElementById("contact-form");
+    if (ctForm && typeof ctForm.reset === "function") ctForm.reset();
+  }
+
+  function resetIsolatedTutorialSession() {
+    closeTutorialModals();
+    state.products = clone(SEED.products);
+    state.cart = {};
+    state.orders = clone(SEED.initialOrders);
+    state.messages = clone(SEED.initialMessages);
+    state.demoUser = null;
+    state.filters = defaultFilters();
+    state.lastInvoice = null;
+    state.heroIdx = 0;
+    state.jerseysOpen = true;
+    tutorial.orderPlacedNumber = null;
+    tutorial.inquirySubmitted = false;
+    clearCheckoutAndContactForms();
+    syncFilterInputs();
+    updateHeader();
+  }
+
+  function restoreManualSessionOnExit() {
+    const snap = tutorial.manualSnapshot;
+    tutorial.manualSnapshot = null;
+    tutorial.orderPlacedNumber = null;
+    tutorial.inquirySubmitted = false;
+    clearCheckoutAndContactForms();
+
+    if (!snap) {
+      updateHeader();
+      return;
+    }
+
+    const currentRaw = safeReadRawStorage();
+    // Never overwrite newer persisted state from another browser context with a stale in-memory snapshot.
+    if (currentRaw && currentRaw !== snap.rawStorage) {
+      try {
+        const fresh = JSON.parse(currentRaw);
+        state.products = (fresh && Array.isArray(fresh.products) && fresh.products.length === SEED.products.length)
+          ? fresh.products
+          : clone(SEED.products);
+        state.cart = (fresh && fresh.cart && typeof fresh.cart === "object") ? fresh.cart : {};
+        state.orders = (fresh && Array.isArray(fresh.orders)) ? fresh.orders : clone(SEED.initialOrders);
+        state.messages = (fresh && Array.isArray(fresh.messages)) ? fresh.messages : clone(SEED.initialMessages);
+        state.demoUser = (fresh && fresh.demoUser) ? fresh.demoUser : null;
+      } catch (_) {
+        state.products = clone(snap.products);
+        state.cart = clone(snap.cart);
+        state.orders = clone(snap.orders);
+        state.messages = clone(snap.messages);
+        state.demoUser = clone(snap.demoUser);
+      }
+    } else {
+      state.products = clone(snap.products);
+      state.cart = clone(snap.cart);
+      state.orders = clone(snap.orders);
+      state.messages = clone(snap.messages);
+      state.demoUser = clone(snap.demoUser);
+    }
+
+    state.heroIdx = snap.heroIdx;
+    state.jerseysOpen = snap.jerseysOpen;
+    state.filters = clone(snap.filters);
+    state.lastInvoice = clone(snap.lastInvoice);
+
+    syncFilterInputs();
+    updateHeader();
+    switchView(snap.view || "home");
+  }
+
+  function ensureTutorialCartItem(productId, minQty) {
+    const prod = getProduct(productId);
+    if (!prod || prod.stock <= 0) return;
+    const current = Number(state.cart[productId] || 0);
+    if (current < minQty) {
+      state.cart[productId] = Math.min(prod.stock, minQty);
+      updateHeader();
+    }
+  }
+
+  function dispatchFormSubmit(formEl) {
+    if (!formEl) return;
+    if (typeof Event === "function") {
+      formEl.dispatchEvent(new Event("submit", { cancelable: true }));
+    } else {
+      formEl.dispatchEvent({ type: "submit", cancelable: true, preventDefault() {} });
+    }
+  }
+
+  function ensureTutorialOrderPlaced() {
+    if (tutorial.orderPlacedNumber) {
+      const existing = state.orders.find((o) => o.orderNumber === tutorial.orderPlacedNumber);
+      if (existing) {
+        state.lastInvoice = existing;
+        return existing;
+      }
+    }
+
+    if (cartUnitCount() === 0) {
+      ensureTutorialCartItem(1, 3);
+    }
+    const fillBtn = document.getElementById("fill-demo-checkout");
+    if (fillBtn) fillBtn.click();
+
+    dispatchFormSubmit(document.getElementById("checkout-form"));
+    if (state.lastInvoice) {
+      tutorial.orderPlacedNumber = state.lastInvoice.orderNumber;
+    }
+    return state.lastInvoice;
+  }
+
+  function ensureTutorialInquirySubmitted() {
+    if (tutorial.inquirySubmitted) return;
+    const nameEl = document.getElementById("ct-name");
+    const emailEl = document.getElementById("ct-email");
+    const subjEl = document.getElementById("ct-subject");
+    const msgEl = document.getElementById("ct-message");
+    if (nameEl) nameEl.value = "Taylor Example";
+    if (emailEl) emailEl.value = "taylor@example.invalid";
+    if (subjEl) subjEl.value = "Jersey Sizing Check (Demo)";
+    if (msgEl) msgEl.value = "Synthetic tutorial inquiry demonstrating local Admin inbox synchronization. Zero external transmission.";
+    dispatchFormSubmit(document.getElementById("contact-form"));
+    tutorial.inquirySubmitted = true;
+    state.demoUser = {
+      username: "demo_shopper",
+      name: "Alex Morgan-Demo",
+      email: "demo.shopper@example.invalid",
+    };
+    updateHeader();
+  }
+
+  const TUTORIAL_STAGES = [
+    {
+      id: "home-intro",
+      view: "home",
+      targetSelector: "#home-hero-layout",
+      compactTargetSelector: "#hero-carousel",
+      requiredSelectors: ["#home-hero-layout"],
+      title: "Storefront Overview & Featured Merchandise",
+      narration:
+        "NBASHOP is an educational static storefront showcasing 12 source-backed categories, 14 synthetic SKUs, and original vector SVGs in an isolated tutorial session. Watch the featured carousel advance.",
+      durationMs: 4000,
+      subDelayMs: 1400,
+      enter() {
+        closeTutorialModals();
+        state.heroIdx = 0;
+        switchView("home");
+      },
+      subAction() {
+        const nextBtn = document.getElementById("hero-next");
+        if (nextBtn) nextBtn.click();
+        focusSubTargetIfNeeded("#hero-carousel", "#hero-carousel");
+      },
+    },
+    {
+      id: "catalog-filter",
+      view: "shop",
+      targetSelector: "#shop-layout",
+      compactTargetSelector: "#shop-toolbar",
+      requiredSelectors: ["#shop-filter-sidebar", "#shop-toolbar", "#shop-grid"],
+      title: "Catalog Filtering, Search & Price Sorting",
+      narration:
+        "Filter all 14 synthetic products by search term, price, stock, or category. Next, the walkthrough filters to Men's Jersey and sorts Price: Low to High ($119 to $129).",
+      durationMs: 4400,
+      subDelayMs: 1400,
+      enter() {
+        closeTutorialModals();
+        state.filters = defaultFilters();
+        syncFilterInputs();
+        switchView("shop");
+      },
+      subAction() {
+        state.filters.categories = [1];
+        state.filters.sort = "price_asc";
+        state.filters.page = 1;
+        syncFilterInputs();
+        renderShop();
+        focusSubTargetIfNeeded("#shop-toolbar", "#shop-layout");
+      },
+    },
+    {
+      id: "product-detail",
+      view: "shop",
+      targetSelector: "#detail-modal .modal-dialog",
+      compactTargetSelector: "#detail-modal .modal-dialog",
+      requiredSelectors: ["#detail-content", "#det-add-btn"],
+      isModalStage: true,
+      title: "Product Detail, Size, Quantity & Add to Cart",
+      narration:
+        "Inspect original SVG artwork, available stock, and sizing. Watch the tutorial choose size L, raise quantity to 2, and add Apex Crimson Court Jersey #23 to the isolated cart.",
+      durationMs: 5000,
+      preSubDelayMs: 850,
+      subDelayMs: 1500,
+      preSecondSubDelayMs: 2450,
+      secondSubDelayMs: 3050,
+      enter() {
+        closeTutorialModals();
+        switchView("shop");
+        openDetailModal(1);
+        tutorial.modalPhase = 0;
+        tutorial.modalFocusSelectors = null;
+        tutorial.modalUserScrolledAway = false;
+        tutorial.modalLastGuidedScrollTop = 0;
+        setTutorialActionStatus("");
+        const dlg = getDetailModalDialog();
+        if (dlg) {
+          tutorial.modalProgrammaticScrollUntil = Date.now() + 200;
+          dlg.scrollTop = 0;
+        }
+      },
+      preSubAction() {
+        tutorial.modalPhase = 1;
+        tutorial.modalFocusSelectors = [".size-row", ".detail-buy-row"];
+        scrollModalElementIntoView([".size-row", ".detail-buy-row"], { instant: prefersReducedMotion() });
+        setTutorialControlFocus([".size-row", ".qty-control"]);
+      },
+      subAction() {
+        tutorial.modalPhase = 2;
+        tutorial.modalFocusSelectors = [".size-row", ".detail-buy-row"];
+        scrollModalElementIntoView([".size-row", ".detail-buy-row"], { instant: true });
+        const sizeL = document.querySelector('#detail-content [data-size="L"]');
+        if (sizeL) sizeL.click();
+        const incBtn = document.getElementById("det-inc");
+        if (incBtn) incBtn.click();
+        setTutorialControlFocus(['#detail-content [data-size="L"]', ".qty-control"]);
+      },
+      preSecondSubAction() {
+        tutorial.modalPhase = 3;
+        tutorial.modalFocusSelectors = ["#det-add-btn"];
+        scrollModalElementIntoView(["#det-add-btn"], { instant: prefersReducedMotion() });
+        setTutorialControlFocus(["#det-add-btn"]);
+      },
+      secondSubAction() {
+        tutorial.modalPhase = 4;
+        tutorial.modalFocusSelectors = ["#det-add-btn"];
+        scrollModalElementIntoView(["#det-add-btn"], { instant: true });
+        const addBtn = document.getElementById("det-add-btn");
+        if (addBtn) addBtn.click();
+        setTutorialControlFocus(null);
+        const qty = cartUnitCount();
+        setTutorialActionStatus(
+          `Added ${state.detailQty} \u00d7 Apex Crimson Court Jersey #23 (Size ${state.detailSize}) \u00b7 Isolated Cart: ${qty} items`
+        );
+        updateTutorialAdaptiveLayout();
+      },
+    },
+    {
+      id: "shopping-cart",
+      view: "cart",
+      targetSelector: "#cart-layout",
+      compactTargetSelector: "#cart-items-card",
+      requiredSelectors: ["#cart-items-card", "#cart-summary-card"],
+      title: "Stock-Bounded Shopping Cart & Totals",
+      narration:
+        "Cart quantities stay bounded by simulated catalog stock and automatically add the original $10.00 flat shipping rule. Watch quantity increase from 2 to 3 ($367.00 total).",
+      durationMs: 4400,
+      subDelayMs: 1400,
+      enter() {
+        closeTutorialModals();
+        if (!tutorial.orderPlacedNumber) {
+          ensureTutorialCartItem(1, 2);
+        } else {
+          state.cart = { 1: Math.min(getProduct(1).stock, 2) };
+          updateHeader();
+        }
+        switchView("cart");
+      },
+      subAction() {
+        const incBtn = document.querySelector('[data-cart-inc="1"]');
+        if (incBtn) incBtn.click();
+        focusSubTargetIfNeeded("#cart-summary-card", "#cart-layout");
+      },
+    },
+    {
+      id: "checkout-preview",
+      view: "checkout",
+      targetSelector: "#checkout-form-section",
+      compactTargetSelector: "#checkout-form",
+      requiredSelectors: ["#checkout-form", "#checkout-summary-card"],
+      title: "Non-Payment Synthetic Checkout Preview",
+      narration:
+        "Legacy raw card and IBAN fields were removed in Phase A. Next, Fill Synthetic Demo Info populates a fictional @example.invalid shopper alongside the live order summary.",
+      durationMs: 4400,
+      subDelayMs: 1400,
+      enter() {
+        closeTutorialModals();
+        state.lastInvoice = null;
+        if (cartUnitCount() === 0) {
+          ensureTutorialCartItem(1, 3);
+        }
+        clearCheckoutAndContactForms();
+        switchView("checkout");
+      },
+      subAction() {
+        const fillBtn = document.getElementById("fill-demo-checkout");
+        if (fillBtn) fillBtn.click();
+        focusSubTargetIfNeeded("#checkout-summary-card", "#checkout-form-section");
+      },
+    },
+    {
+      id: "order-receipt",
+      view: "checkout",
+      targetSelector: "#invoice-section",
+      compactTargetSelector: "#invoice-section",
+      requiredSelectors: ["#invoice-section", "#invoice-body"],
+      title: "Simulated Order Receipt & Stock Deduction",
+      narration:
+        "Submitting the simulated preview generates a local NBA-XXXXXXXX receipt, deducts isolated catalog inventory (34 to 31 units), and syncs to the Admin preview with zero real payment.",
+      durationMs: 4400,
+      enter() {
+        closeTutorialModals();
+        switchView("checkout");
+        ensureTutorialOrderPlaced();
+        renderCheckout();
+      },
+    },
+    {
+      id: "contact-inquiry",
+      view: "contact",
+      targetSelector: "#contact-layout",
+      compactTargetSelector: "#contact-form",
+      requiredSelectors: ["#contact-form"],
+      title: "Simulated Contact Inquiry & Demo Account",
+      narration:
+        "The contact form mirrors contact.php to admin_messages.php locally. Next, a synthetic @example.invalid inquiry submits to the isolated Admin inbox and signs in @demo_shopper.",
+      durationMs: 4400,
+      subDelayMs: 1400,
+      enter() {
+        closeTutorialModals();
+        switchView("contact");
+      },
+      subAction() {
+        ensureTutorialInquirySubmitted();
+      },
+    },
+    {
+      id: "admin-dashboard",
+      view: "admin",
+      targetSelector: "#admin-overview-zone",
+      compactTargetSelector: "#admin-kpi-strip",
+      requiredSelectors: ["#admin-kpi-strip", "#admin-stock-card", "#admin-orders-card"],
+      title: "Sandboxed Admin Preview & Order Visibility",
+      narration:
+        "Admin & Security reflects the isolated tutorial transactions live: simulated order volume, updated inventory counts, the newly placed NBA-XXXXXXXX receipt, and the synced inbox inquiry.",
+      durationMs: 5800,
+      subDelayMs: 1800,
+      secondSubDelayMs: 3600,
+      enter() {
+        closeTutorialModals();
+        ensureTutorialOrderPlaced();
+        ensureTutorialInquirySubmitted();
+        clearTutorialToasts();
+        switchView("admin");
+        const ordersWrap = document.getElementById("adm-orders-wrap");
+        if (ordersWrap) ordersWrap.scrollTop = 0;
+        const msgWrap = document.getElementById("adm-messages-wrap");
+        if (msgWrap) msgWrap.scrollTop = 0;
+      },
+      subAction() {
+        const ordersWrap = document.getElementById("adm-orders-wrap");
+        if (ordersWrap) ordersWrap.scrollTop = 0;
+        focusSubTargetIfNeeded("#admin-orders-card", "#admin-orders-card");
+      },
+      secondSubAction() {
+        const dock = document.getElementById("tutorialDock");
+        const msgWrap = document.getElementById("adm-messages-wrap");
+        if (msgWrap) msgWrap.scrollTop = 0;
+        const inboxHeading = document.getElementById("admin-inbox-heading");
+        const inquiryRow = document.querySelector('#adm-messages-body [data-tutorial-inquiry="true"]');
+        const headingVis = inboxHeading && dock ? getElementClippedVisibility(inboxHeading, dock) : null;
+        const rowVis = inquiryRow && dock ? getElementClippedVisibility(inquiryRow, dock) : null;
+        if (headingVis && headingVis.full && rowVis && rowVis.full) {
+          return;
+        }
+        focusSubTargetIfNeeded("#admin-inbox-section", "#admin-inbox-section");
+      },
+    },
+    {
+      id: "security-matrix",
+      view: "admin",
+      targetSelector: "#admin-security-card",
+      compactTargetSelector: "#admin-security-card",
+      requiredSelectors: ["#admin-security-card"],
+      title: "Private PHP/MySQL Security Remediation Matrix",
+      narration:
+        "This matrix documents historical Phase A verification of the separate private PHP 8.3 / MySQL 8.0 / Apache 2.4 codebase (14/14 static & 17/17 CI runtime tests) — not executed in this static browser demo.",
+      durationMs: 4600,
+      enter() {
+        closeTutorialModals();
+        switchView("admin");
+      },
+    },
+    {
+      id: "finish",
+      view: "home",
+      targetSelector: "#home-hero-layout",
+      compactTargetSelector: "#home-hero-layout",
+      requiredSelectors: ["#home-hero-layout"],
+      title: "Walkthrough Complete — Explore Manually",
+      narration:
+        "You have toured NBASHOP's synthetic catalog, product detail modal, stock-bounded cart, non-payment checkout, receipt, Admin preview, and security audit. Click Replay or Exit to restore your untouched manual session.",
+      durationMs: 0,
+      enter() {
+        closeTutorialModals();
+        state.heroIdx = 0;
+        switchView("home");
+      },
+    },
+  ];
+
+  function computeTutorialDensity(vw, vh) {
+    if (vh <= 620 || vw <= 360) return "tight";
+    if (vh <= 780 || vw <= 680) return "compact";
+    return "standard";
+  }
+
+  function setRootCssVar(name, value) {
+    const rootStyle = document.documentElement && document.documentElement.style;
+    if (rootStyle && typeof rootStyle.setProperty === "function") {
+      rootStyle.setProperty(name, value);
+    }
+  }
+
+  function clearTutorialAdaptiveLayout() {
+    if (document.body && document.body.dataset) {
+      delete document.body.dataset.tutorialStage;
+      delete document.body.dataset.tutorialDensity;
+    }
+    const rootStyle = document.documentElement && document.documentElement.style;
+    if (rootStyle && typeof rootStyle.removeProperty === "function") {
+      TUTORIAL_CSS_VARS.forEach((v) => rootStyle.removeProperty(v));
+    }
+    tutorial.adaptiveLayout = {
+      density: "standard",
+      dockOffset: 96,
+      availH: 600,
+    };
+  }
+
+  function getDockClearanceMetrics(dock) {
+    const vh = window.innerHeight || 768;
+    const vw = window.innerWidth || 1280;
+    const density = computeTutorialDensity(vw, vh);
+    const stickyTop = density === "tight" || vw <= 680 ? 4 : 6;
+    const gap = density === "tight" ? 6 : density === "compact" ? 8 : 10;
+    const dockH = dock ? dock.getBoundingClientRect().height || 0 : 0;
+    const topEdge = stickyTop + dockH + gap;
+    const availH = Math.max(80, vh - topEdge - 6);
+    return { vh, vw, density, stickyTop, gap, dockH, topEdge, availH };
+  }
+
+  function updateTutorialAdaptiveLayout() {
+    if (!tutorial.active) {
+      clearTutorialAdaptiveLayout();
+      return;
+    }
+    const stage = TUTORIAL_STAGES[tutorial.stageIndex];
+    const dock = document.getElementById("tutorialDock");
+    if (!stage || !dock) return;
+
+    const vw = window.innerWidth || 1280;
+    const vh = window.innerHeight || 768;
+    const density = computeTutorialDensity(vw, vh);
+    if (document.body && document.body.dataset) {
+      document.body.dataset.tutorialStage = stage.id;
+      document.body.dataset.tutorialDensity = density;
+    }
+
+    const { topEdge, availH } = getDockClearanceMetrics(dock);
+    const dockOffset = Math.round(topEdge);
+    tutorial.adaptiveLayout = {
+      density,
+      dockOffset,
+      availH: Math.round(availH),
+    };
+    setRootCssVar("--tut-dock-offset", `${dockOffset}px`);
+    setRootCssVar("--tut-avail-h", `${Math.round(availH)}px`);
+  }
+
+  function getDetailModalDialog() {
+    const backdrop = document.getElementById("detail-modal");
+    if (!backdrop || backdrop.hidden) return null;
+    return backdrop.querySelector(".modal-dialog");
+  }
+
+  function getElementClippedVisibility(el, dock) {
+    if (!el) return null;
+    const vh = window.innerHeight || 768;
+    const vw = window.innerWidth || 1280;
+    const er = el.getBoundingClientRect();
+    if (!er || er.height <= 0 || er.width <= 0) return null;
+
+    let clipTop = 0;
+    let clipBottom = vh;
+    let clipLeft = 0;
+    let clipRight = vw;
+
+    const dockIsAncestor = Boolean(dock && typeof dock.contains === "function" && dock.contains(el));
+    if (dock && !dock.hidden && !dockIsAncestor) {
+      const dr = dock.getBoundingClientRect();
+      if (dr && dr.height > 0) {
+        if (dr.top < -1 || dr.bottom > vh + 1) {
+          return {
+            top: Math.round(er.top),
+            bottom: Math.round(er.bottom),
+            height: Math.round(er.height),
+            visibleTop: 0,
+            visibleBottom: 0,
+            visibleHeight: 0,
+            visibleRatio: 0,
+            full: false,
+            clippedByAncestor: false,
+          };
+        }
+        clipTop = Math.max(clipTop, dr.bottom + 1);
+      }
+    }
+
+    let clippedByAncestor = false;
+    let anc = el.parentElement || null;
+    while (anc && anc !== document.body && anc !== document.documentElement) {
+      let isClip = Boolean(anc.classList && anc.classList.contains("modal-dialog"));
+      if (!isClip && typeof window.getComputedStyle === "function") {
+        const cs = window.getComputedStyle(anc);
+        if (cs) {
+          const oy = cs.overflowY || cs.overflow || "";
+          if (oy === "auto" || oy === "scroll" || oy === "hidden" || oy === "clip") {
+            isClip = true;
+          }
+        }
+      }
+      if (isClip) {
+        const ar = anc.getBoundingClientRect();
+        if (ar && ar.height > 0 && ar.width > 0) {
+          if (er.top < ar.top - 1 || er.bottom > ar.bottom + 1) {
+            clippedByAncestor = true;
+          }
+          clipTop = Math.max(clipTop, ar.top);
+          clipBottom = Math.min(clipBottom, ar.bottom);
+          clipLeft = Math.max(clipLeft, ar.left);
+          clipRight = Math.min(clipRight, ar.right);
+        }
+      }
+      anc = anc.parentElement || null;
+    }
+
+    const visTop = Math.max(er.top, clipTop);
+    const visBottom = Math.min(er.bottom, clipBottom);
+    const visLeft = Math.max(er.left, clipLeft);
+    const visRight = Math.min(er.right, clipRight);
+    const visibleHeight = visRight > visLeft ? Math.max(0, visBottom - visTop) : 0;
+    const visibleRatio = er.height > 0 ? Math.min(1, visibleHeight / er.height) : 0;
+    const full = visibleHeight >= er.height - 2 && visibleRatio >= 0.98 && er.top >= clipTop - 1 && er.bottom <= clipBottom + 1;
+
+    return {
+      top: Math.round(er.top),
+      bottom: Math.round(er.bottom),
+      height: Math.round(er.height),
+      visibleTop: Math.round(visTop),
+      visibleBottom: Math.round(visBottom),
+      visibleHeight: Math.round(visibleHeight),
+      visibleRatio: Math.round(visibleRatio * 100) / 100,
+      full,
+      clippedByAncestor,
+    };
+  }
+
+  function isElementFullyInSafeViewport(dock, el) {
+    if (!el || !dock) return false;
+    const vis = getElementClippedVisibility(el, dock);
+    return Boolean(vis && vis.full);
+  }
+
+  function scrollModalElementIntoView(selectors, options) {
+    const opts = options || {};
+    if (!tutorial.active) return false;
+    if ((tutorial.userScrolledAway || tutorial.modalUserScrolledAway) && !opts.force) return false;
+    const dlg = getDetailModalDialog();
+    const dock = document.getElementById("tutorialDock");
+    if (!dlg || !dock) return false;
+
+    const list = Array.isArray(selectors) ? selectors : [selectors];
+    const els = list.map((s) => (typeof s === "string" ? document.querySelector(s) : s)).filter(Boolean);
+    if (els.length === 0) return false;
+
+    // If every requested control is already fully visible inside the modal's clipped safe bounds, skip scrolling.
+    const allAlreadyVisible = els.every((el) => {
+      const v = getElementClippedVisibility(el, dock);
+      return Boolean(v && v.full);
+    });
+    if (allAlreadyVisible && !opts.force) {
+      tutorial.modalLastGuidedScrollTop = Math.round(dlg.scrollTop || 0);
+      return false;
+    }
+
+    const maxScrollTop = Math.max(0, (dlg.scrollHeight || 0) - (dlg.clientHeight || 0));
+    if (maxScrollTop <= 1) {
+      tutorial.modalLastGuidedScrollTop = Math.round(dlg.scrollTop || 0);
+      return false;
+    }
+
+    const dlgRect = dlg.getBoundingClientRect();
+    let minRelTop = Infinity;
+    let maxRelBottom = -Infinity;
+    els.forEach((el) => {
+      const r = el.getBoundingClientRect();
+      if (!r || r.height <= 0) return;
+      const relTop = r.top - dlgRect.top + (dlg.scrollTop || 0);
+      const relBot = r.bottom - dlgRect.top + (dlg.scrollTop || 0);
+      if (relTop < minRelTop) minRelTop = relTop;
+      if (relBot > maxRelBottom) maxRelBottom = relBot;
+    });
+    if (!Number.isFinite(minRelTop) || !Number.isFinite(maxRelBottom)) return false;
+
+    const pad = 12;
+    const groupH = maxRelBottom - minRelTop;
+    const availModalH = Math.max(60, (dlg.clientHeight || dlgRect.height || 240) - pad * 2);
+    let desiredTop;
+    if (groupH <= availModalH) {
+      // Frame the whole control group comfortably inside the modal viewport
+      desiredTop = maxRelBottom - (dlg.clientHeight || dlgRect.height) + pad;
+      if (desiredTop > minRelTop - pad) {
+        desiredTop = minRelTop - pad;
+      }
+    } else {
+      // Align primary control cleanly near the top of the modal container
+      desiredTop = minRelTop - pad;
+    }
+
+    const targetTop = Math.max(0, Math.min(maxScrollTop, Math.round(desiredTop)));
+    const curTop = Math.round(dlg.scrollTop || 0);
+    if (Math.abs(targetTop - curTop) <= 2) {
+      tutorial.modalLastGuidedScrollTop = curTop;
+      return false;
+    }
+
+    const useInstant = Boolean(opts.instant || prefersReducedMotion());
+    tutorial.modalLastGuidedScrollTop = targetTop;
+    tutorial.modalProgrammaticScrollUntil = Date.now() + (useInstant ? 200 : 520);
+    if (typeof dlg.scrollTo === "function") {
+      dlg.scrollTo({ top: targetTop, behavior: useInstant ? "auto" : "smooth" });
+    } else {
+      dlg.scrollTop = targetTop;
+    }
+    return true;
+  }
+
+  function getModalVisibilitySnapshot(dock) {
+    const dlg = getDetailModalDialog();
+    const dlgRect = dlg ? dlg.getBoundingClientRect() : null;
+    const statusEl = document.getElementById("tutorialActionStatus");
+    const toastEl = document.querySelector("#toast-region .toast");
+    return {
+      open: Boolean(dlg),
+      dialog: dlgRect
+        ? {
+            top: Math.round(dlgRect.top),
+            bottom: Math.round(dlgRect.bottom),
+            scrollTop: Math.round(dlg.scrollTop || 0),
+            scrollHeight: dlg.scrollHeight || 0,
+            clientHeight: dlg.clientHeight || 0,
+          }
+        : null,
+      title: dlg ? getElementClippedVisibility(document.getElementById("detail-title"), dock) : null,
+      artwork: dlg ? getElementClippedVisibility(dlg.querySelector(".detail-art"), dock) : null,
+      sizeRow: dlg ? getElementClippedVisibility(dlg.querySelector(".size-row"), dock) : null,
+      qtyControl: dlg ? getElementClippedVisibility(dlg.querySelector(".qty-control"), dock) : null,
+      addBtn: dlg ? getElementClippedVisibility(document.getElementById("det-add-btn"), dock) : null,
+      actionStatus:
+        statusEl && !statusEl.hidden ? getElementClippedVisibility(statusEl, dock) : null,
+      toast: toastEl ? getElementClippedVisibility(toastEl, dock) : null,
+    };
+  }
+
+  function getAdminVisibilitySnapshot(dock) {
+    if (state.view !== "admin") return null;
+    return {
+      kpiStrip: getElementClippedVisibility(document.getElementById("admin-kpi-strip"), dock),
+      ordersCard: getElementClippedVisibility(document.getElementById("admin-orders-card"), dock),
+      highlightedOrderRow: getElementClippedVisibility(
+        document.querySelector("#adm-orders-body .tutorial-row-highlight"),
+        dock
+      ),
+      inboxSection: getElementClippedVisibility(document.getElementById("admin-inbox-section"), dock),
+      inboxHeading: getElementClippedVisibility(document.getElementById("admin-inbox-heading"), dock),
+      highlightedInquiryRow: getElementClippedVisibility(
+        document.querySelector('#adm-messages-body [data-tutorial-inquiry="true"]'),
+        dock
+      ),
+    };
+  }
+
+  function getStageRequiredVisibility(dock, stage) {
+    if (!dock || !stage) {
+      return { selectors: [], allFullyVisible: true, combinedHeight: 0, minTop: 0, maxBottom: 0 };
+    }
+    const sels = stage.requiredSelectors || (stage.targetSelector ? [stage.targetSelector] : []);
+    let minTop = Infinity;
+    let maxBottom = -Infinity;
+    let foundAny = false;
+    let allFullyVisible = true;
+    const details = [];
+
+    sels.forEach((sel) => {
+      const el = document.querySelector(sel);
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      if (r.height <= 0 || r.width <= 0) return;
+      foundAny = true;
+      if (r.top < minTop) minTop = r.top;
+      if (r.bottom > maxBottom) maxBottom = r.bottom;
+      const full = isElementFullyInSafeViewport(dock, el);
+      if (!full) allFullyVisible = false;
+      details.push({ selector: sel, top: Math.round(r.top), bottom: Math.round(r.bottom), full });
+    });
+
+    return {
+      selectors: details,
+      allFullyVisible: foundAny ? allFullyVisible : true,
+      combinedHeight: foundAny ? Math.max(0, maxBottom - minTop) : 0,
+      minTop: foundAny ? minTop : 0,
+      maxBottom: foundAny ? maxBottom : 0,
+    };
+  }
+
+  function applyStageSpotlight(selector) {
+    clearSpotlight();
+    if (!selector) return;
+    const el = document.querySelector(selector);
+    if (el) el.classList.add("tutorial-spotlight");
+  }
+
+  function focusSubTargetIfNeeded(focusSelector, spotlightSelector) {
+    if (spotlightSelector) applyStageSpotlight(spotlightSelector);
+    const dock = document.getElementById("tutorialDock");
+    const targetEl = document.querySelector(focusSelector);
+    if (!dock || !targetEl) return;
+
+    const stage = TUTORIAL_STAGES[tutorial.stageIndex];
+    const primaryEl = stage && stage.targetSelector ? document.querySelector(stage.targetSelector) : null;
+    if (primaryEl && isElementFullyInSafeViewport(dock, primaryEl) && isElementFullyInSafeViewport(dock, targetEl)) {
+      return;
+    }
+
+    tutorial.subFocusSelector = focusSelector;
+    tutorial.resolvedFocusSelector = focusSelector;
+    if (tutorial.userScrolledAway) return;
+    if (!isElementFullyInSafeViewport(dock, targetEl)) {
+      positionTutorialWorkspace(focusSelector, { instant: prefersReducedMotion(), force: true });
+    }
+  }
+
+  function resolveGuidedFocusSelector(dock) {
+    const stage = TUTORIAL_STAGES[tutorial.stageIndex];
+    if (!stage) return tutorial.activeTargetSelector;
+    const primarySel = tutorial.activeTargetSelector || stage.targetSelector;
+    const primaryEl = primarySel ? document.querySelector(primarySel) : null;
+
+    if (tutorial.subFocusSelector) {
+      const subEl = document.querySelector(tutorial.subFocusSelector);
+      if (subEl) {
+        if (primaryEl && typeof primaryEl.contains === "function" && primaryEl.contains(subEl)) {
+          const { availH } = getDockClearanceMetrics(dock);
+          const pRect = primaryEl.getBoundingClientRect();
+          if (pRect && pRect.height > 0 && pRect.height <= availH + 2) {
+            return primarySel;
+          }
+        }
+        return tutorial.subFocusSelector;
+      }
+    }
+
+    const compactSel = stage.compactTargetSelector || null;
+    if (!primarySel || !compactSel || compactSel === primarySel) return primarySel;
+
+    const compactEl = document.querySelector(compactSel);
+    if (!primaryEl || !compactEl) return primarySel;
+
+    const { availH } = getDockClearanceMetrics(dock);
+    const pRect = primaryEl.getBoundingClientRect();
+    const reqVis = getStageRequiredVisibility(dock, stage);
+    const requiredSpanFromPrimaryTop =
+      reqVis.selectors.length > 0 ? Math.max(0, reqVis.maxBottom - pRect.top) : pRect.height;
+
+    if (pRect.height <= availH + 2 || requiredSpanFromPrimaryTop <= availH + 2) {
+      return primarySel;
+    }
+    return compactSel;
+  }
+
+  function computeGuidedScrollY(dock, target) {
+    const scrollY = window.scrollY || window.pageYOffset || 0;
+    const { vh, stickyTop, topEdge } = getDockClearanceMetrics(dock);
+    const maxScrollY = Math.max(0, (document.documentElement.scrollHeight || 0) - vh);
+    const dockRect = dock.getBoundingClientRect();
+
+    const stage = TUTORIAL_STAGES[tutorial.stageIndex];
+    if (!target || (stage && stage.isModalStage)) {
+      const dockDocTop = dockRect.top + scrollY;
+      return Math.max(0, Math.min(maxScrollY, Math.round(dockDocTop - stickyTop)));
+    }
+
+    const targetRect = target.getBoundingClientRect();
+    const targetDocTop = targetRect.top + scrollY;
+    const desired = targetDocTop - topEdge;
+    return Math.max(0, Math.min(maxScrollY, Math.round(desired)));
+  }
+
+  function isTargetWellFramed(dock, target) {
+    const vh = window.innerHeight || 768;
+    const dockRect = dock.getBoundingClientRect();
+    const dockVisible = dockRect.top >= -1 && dockRect.bottom <= vh + 1;
+    if (!dockVisible) return false;
+    const stage = TUTORIAL_STAGES[tutorial.stageIndex];
+    if (!target || (stage && stage.isModalStage)) {
+      return dockRect.top <= 10;
+    }
+    const targetRect = target.getBoundingClientRect();
+    const safeH = Math.max(40, vh - dockRect.bottom - 6);
+    const reqVis = stage ? getStageRequiredVisibility(dock, stage) : null;
+    const topAlignedNearDock = targetRect.top >= dockRect.bottom + 1 && targetRect.top <= dockRect.bottom + 24;
+
+    if (reqVis && reqVis.selectors.length > 0 && reqVis.combinedHeight <= safeH + 2) {
+      return reqVis.allFullyVisible && topAlignedNearDock;
+    }
+    if (targetRect.height <= safeH) {
+      return topAlignedNearDock && targetRect.bottom <= vh - 1;
+    }
+    return topAlignedNearDock;
+  }
+
+  function positionTutorialWorkspace(explicitSelector, options) {
+    const opts = options || {};
+    if (!tutorial.active) return;
+    if (tutorial.userScrolledAway && !opts.force) return;
+    const dock = document.getElementById("tutorialDock");
+    if (!dock || dock.hidden) return;
+
+    const selector = explicitSelector || resolveGuidedFocusSelector(dock);
+    tutorial.resolvedFocusSelector = selector;
+    const target = selector ? document.querySelector(selector) : null;
+
+    if (!opts.force && isTargetWellFramed(dock, target)) {
+      tutorial.lastGuidedScrollY = Math.round(window.scrollY || 0);
+      return;
+    }
+
+    const targetY = computeGuidedScrollY(dock, target);
+    const currentY = Math.round(window.scrollY || 0);
+    if (Math.abs(targetY - currentY) <= 2) {
+      tutorial.lastGuidedScrollY = currentY;
+      return;
+    }
+
+    const useInstant = Boolean(opts.instant || prefersReducedMotion());
+    const now = Date.now();
+    tutorial.lastGuidedScrollY = targetY;
+    tutorial.programmaticScrollUntil = now + (useInstant ? 180 : 650);
+    window.scrollTo({
+      top: targetY,
+      behavior: useInstant ? "auto" : "smooth",
+    });
+  }
+
+  function renderTutorialDockUI() {
+    const stage = TUTORIAL_STAGES[tutorial.stageIndex];
+    const total = TUTORIAL_STAGES.length;
+    const dock = document.getElementById("tutorialDock");
+    const watchBtn = document.getElementById("btnWatchTutorial");
+    const stepBadge = document.getElementById("tutorialStepBadge");
+    const stateBadge = document.getElementById("tutorialStateBadge");
+    const titleEl = document.getElementById("tutorialStageTitle");
+    const narrEl = document.getElementById("tutorialNarration");
+    const progEl = document.getElementById("tutorialProgress");
+    const fillEl = document.getElementById("tutorialProgressFill");
+    const prevBtn = document.getElementById("btnTutPrev");
+    const playBtn = document.getElementById("btnTutPlayPause");
+    const nextBtn = document.getElementById("btnTutNext");
+    const srEl = document.getElementById("srAnnouncer");
+
+    if (dock) dock.hidden = !tutorial.active;
+    if (watchBtn) watchBtn.setAttribute("aria-expanded", tutorial.active ? "true" : "false");
+    document.body.classList.toggle("tutorial-active", tutorial.active);
+
+    if (!tutorial.active || !stage) return;
+
+    const stepNum = tutorial.stageIndex + 1;
+    const pct = Math.round((stepNum / total) * 100);
+    if (stepBadge) stepBadge.textContent = `Stage ${stepNum} / ${total}`;
+    if (titleEl) titleEl.textContent = stage.title;
+    if (narrEl) narrEl.textContent = stage.narration;
+    if (progEl) {
+      progEl.setAttribute("aria-valuemax", String(total));
+      progEl.setAttribute("aria-valuenow", String(stepNum));
+    }
+    if (fillEl) fillEl.style.width = `${pct}%`;
+
+    if (stateBadge) {
+      stateBadge.classList.remove("is-paused", "is-complete");
+      if (tutorial.completed) {
+        stateBadge.textContent = "Complete";
+        stateBadge.classList.add("is-complete");
+      } else if (tutorial.playing) {
+        stateBadge.textContent = "Playing";
+      } else {
+        stateBadge.textContent = "Paused";
+        stateBadge.classList.add("is-paused");
+      }
+    }
+
+    if (prevBtn) prevBtn.disabled = tutorial.stageIndex === 0;
+    if (nextBtn) nextBtn.disabled = tutorial.stageIndex >= total - 1;
+    if (playBtn) {
+      if (tutorial.completed) {
+        playBtn.textContent = "Replay";
+        playBtn.setAttribute("aria-pressed", "false");
+      } else if (tutorial.playing) {
+        playBtn.textContent = "Pause";
+        playBtn.setAttribute("aria-pressed", "true");
+      } else {
+        playBtn.textContent = "Play";
+        playBtn.setAttribute("aria-pressed", "false");
+      }
+    }
+
+    if (srEl) {
+      srEl.textContent = `Stage ${stepNum} of ${total}: ${stage.title}`;
+    }
+  }
+
+  function scheduleCurrentStageTimers() {
+    clearTutorialTimers();
+    if (!tutorial.active || !tutorial.playing || tutorial.completed) return;
+    const stage = TUTORIAL_STAGES[tutorial.stageIndex];
+    if (!stage || stage.durationMs <= 0) return;
+
+    const token = tutorial.stageToken;
+    const reduced = prefersReducedMotion();
+    const totalDuration = reduced ? Math.min(stage.durationMs, 1800) : stage.durationMs;
+
+    function queueStep(flagName, fn, delayMs, reducedCapMs) {
+      if (typeof fn !== "function" || tutorial[flagName]) return;
+      const delay = reduced ? Math.min(delayMs || 0, reducedCapMs) : delayMs || 0;
+      const tid = setTimeout(() => {
+        tutorial.subTimers = tutorial.subTimers.filter((id) => id !== tid);
+        if (!tutorial.active || !tutorial.playing || tutorial.stageToken !== token) return;
+        tutorial[flagName] = true;
+        tutorial.driving = true;
+        try {
+          fn();
+        } finally {
+          tutorial.driving = false;
+        }
+      }, delay);
+      tutorial.subTimers.push(tid);
+    }
+
+    queueStep("preSubActionDone", stage.preSubAction, stage.preSubDelayMs || 850, 200);
+    queueStep("subActionDone", stage.subAction, stage.subDelayMs || 1400, 450);
+    queueStep("preSecondSubActionDone", stage.preSecondSubAction, stage.preSecondSubDelayMs || 2400, 680);
+    queueStep("secondSubActionDone", stage.secondSubAction, stage.secondSubDelayMs || 2950, 950);
+
+    tutorial.advanceTimer = setTimeout(() => {
+      tutorial.advanceTimer = null;
+      if (!tutorial.active || !tutorial.playing || tutorial.stageToken !== token) return;
+      if (tutorial.stageIndex + 1 < TUTORIAL_STAGES.length) {
+        goToTutorialStage(tutorial.stageIndex + 1, { autoplay: true });
+      }
+    }, totalDuration);
+  }
+
+  function goToTutorialStage(index, options) {
+    const opts = options || {};
+    const clamped = Math.max(0, Math.min(TUTORIAL_STAGES.length - 1, index));
+    clearTutorialTimers();
+    tutorial.stageToken += 1;
+    const token = tutorial.stageToken;
+    tutorial.stageIndex = clamped;
+    tutorial.preSubActionDone = false;
+    tutorial.subActionDone = false;
+    tutorial.preSecondSubActionDone = false;
+    tutorial.secondSubActionDone = false;
+    tutorial.subFocusSelector = null;
+    tutorial.modalFocusSelectors = null;
+    tutorial.modalUserScrolledAway = false;
+    tutorial.modalPhase = 0;
+    setTutorialActionStatus("");
+    clearTutorialToasts();
+
+    const stage = TUTORIAL_STAGES[clamped];
+    const isFinal = clamped === TUTORIAL_STAGES.length - 1;
+    tutorial.completed = isFinal;
+    tutorial.playing = isFinal ? false : Boolean(opts.autoplay);
+    tutorial.activeTargetSelector = stage.targetSelector || null;
+
+    tutorial.driving = true;
+    try {
+      if (typeof stage.enter === "function") stage.enter();
+    } finally {
+      tutorial.driving = false;
+    }
+
+    applyStageSpotlight(tutorial.activeTargetSelector);
+    renderTutorialDockUI();
+    updateTutorialAdaptiveLayout();
+
+    requestAnimationFrame(() => {
+      if (!tutorial.active || tutorial.stageToken !== token) return;
+      updateTutorialAdaptiveLayout();
+      positionTutorialWorkspace(null, {
+        instant: Boolean(opts.instant || stage.isModalStage),
+        force: Boolean(opts.forceScroll || stage.isModalStage),
+      });
+    });
+
+    if (tutorial.playing) {
+      scheduleCurrentStageTimers();
+    }
+  }
+
+  function startTutorial() {
+    if (!tutorial.active) {
+      captureManualSnapshot();
+    }
+    tutorialPersistenceSuspended = true;
+    tutorial.active = true;
+    tutorial.userScrolledAway = false;
+    tutorial.lastViewportW = window.innerWidth || 0;
+    tutorial.lastViewportH = window.innerHeight || 0;
+    resetIsolatedTutorialSession();
+    goToTutorialStage(0, { autoplay: true, forceScroll: true });
+    const playBtn = document.getElementById("btnTutPlayPause");
+    if (playBtn && typeof playBtn.focus === "function") {
+      try {
+        playBtn.focus({ preventScroll: true });
+      } catch (_) {
+        playBtn.focus();
+      }
+    }
+  }
+
+  function pauseTutorial() {
+    if (!tutorial.active || !tutorial.playing) return;
+    tutorial.playing = false;
+    clearTutorialTimers();
+    renderTutorialDockUI();
+  }
+
+  function resumeTutorial() {
+    if (!tutorial.active) return;
+    if (tutorial.completed) {
+      restartTutorial();
+      return;
+    }
+    tutorial.playing = true;
+    renderTutorialDockUI();
+    scheduleCurrentStageTimers();
+  }
+
+  function restartTutorial() {
+    if (!tutorial.active) {
+      startTutorial();
+      return;
+    }
+    tutorial.userScrolledAway = false;
+    tutorial.modalUserScrolledAway = false;
+    resetIsolatedTutorialSession();
+    goToTutorialStage(0, { autoplay: true, forceScroll: true });
+  }
+
+  function exitTutorial(options) {
+    const opts = options || {};
+    clearTutorialTimers();
+    if (tutorial.resizeSettleTimer !== null) {
+      clearTimeout(tutorial.resizeSettleTimer);
+      tutorial.resizeSettleTimer = null;
+    }
+    closeTutorialModals();
+    tutorial.active = false;
+    tutorial.playing = false;
+    tutorial.completed = false;
+    tutorial.preSubActionDone = false;
+    tutorial.subActionDone = false;
+    tutorial.preSecondSubActionDone = false;
+    tutorial.secondSubActionDone = false;
+    tutorial.userScrolledAway = false;
+    tutorial.modalUserScrolledAway = false;
+    tutorial.activeTargetSelector = null;
+    tutorial.subFocusSelector = null;
+    tutorial.resolvedFocusSelector = null;
+    tutorial.modalFocusSelectors = null;
+    tutorial.modalPhase = 0;
+    tutorial.stageToken += 1;
+    setTutorialActionStatus("");
+    clearTutorialToasts();
+    clearSpotlight();
+    clearTutorialAdaptiveLayout();
+    renderTutorialDockUI();
+    restoreManualSessionOnExit();
+    tutorialPersistenceSuspended = false;
+
+    if (opts.restoreFocus !== false) {
+      const watchBtn = document.getElementById("btnWatchTutorial");
+      if (watchBtn && typeof watchBtn.focus === "function") {
+        try {
+          watchBtn.focus({ preventScroll: true });
+        } catch (_) {
+          watchBtn.focus();
+        }
+      }
+    }
+  }
+
+  function handleTutorialViewportChange() {
+    const now = Date.now();
+    const curW = window.innerWidth || 0;
+    const curH = window.innerHeight || 0;
+    tutorial.lastViewportW = curW;
+    tutorial.lastViewportH = curH;
+    tutorial.resizeIgnoreScrollUntil = now + 450;
+
+    if (!tutorial.active) return;
+    const token = tutorial.stageToken;
+
+    const reposition = () => {
+      if (!tutorial.active || tutorial.stageToken !== token) return;
+      updateTutorialAdaptiveLayout();
+      if (!tutorial.userScrolledAway) {
+        positionTutorialWorkspace(null, { instant: true, force: true });
+      }
+      if (!tutorial.userScrolledAway && !tutorial.modalUserScrolledAway && tutorial.modalFocusSelectors) {
+        scrollModalElementIntoView(tutorial.modalFocusSelectors, { instant: true });
+      }
+    };
+
+    requestAnimationFrame(reposition);
+    if (tutorial.resizeSettleTimer !== null) {
+      clearTimeout(tutorial.resizeSettleTimer);
+    }
+    tutorial.resizeSettleTimer = setTimeout(() => {
+      tutorial.resizeSettleTimer = null;
+      reposition();
+    }, 120);
+  }
+
+  function initTutorialEvents() {
+    const watchBtn = document.getElementById("btnWatchTutorial");
+    const prevBtn = document.getElementById("btnTutPrev");
+    const playBtn = document.getElementById("btnTutPlayPause");
+    const nextBtn = document.getElementById("btnTutNext");
+    const restartBtn = document.getElementById("btnTutRestart");
+    const exitBtn = document.getElementById("btnTutExit");
+
+    if (watchBtn) {
+      watchBtn.addEventListener("click", () => {
+        if (tutorial.active) restartTutorial();
+        else startTutorial();
+      });
+    }
+    if (prevBtn) {
+      prevBtn.addEventListener("click", () => {
+        if (!tutorial.active || tutorial.stageIndex <= 0) return;
+        goToTutorialStage(tutorial.stageIndex - 1, { autoplay: false });
+      });
+    }
+    if (playBtn) {
+      playBtn.addEventListener("click", () => {
+        if (!tutorial.active) return;
+        if (tutorial.completed) restartTutorial();
+        else if (tutorial.playing) pauseTutorial();
+        else resumeTutorial();
+      });
+    }
+    if (nextBtn) {
+      nextBtn.addEventListener("click", () => {
+        if (!tutorial.active || tutorial.stageIndex >= TUTORIAL_STAGES.length - 1) return;
+        goToTutorialStage(tutorial.stageIndex + 1, { autoplay: false });
+      });
+    }
+    if (restartBtn) {
+      restartBtn.addEventListener("click", () => restartTutorial());
+    }
+    if (exitBtn) {
+      exitBtn.addEventListener("click", () => exitTutorial({ restoreFocus: true }));
+    }
+
+    window.addEventListener("resize", handleTutorialViewportChange);
+    if (window.visualViewport && typeof window.visualViewport.addEventListener === "function") {
+      window.visualViewport.addEventListener("resize", handleTutorialViewportChange);
+    }
+
+    // Genuine user scroll intent tracking
+    window.addEventListener(
+      "wheel",
+      () => {
+        if (tutorial.active) {
+          tutorial.programmaticScrollUntil = 0;
+          tutorial.userScrollIntentUntil = Date.now() + 900;
+        }
+      },
+      { passive: true }
+    );
+    window.addEventListener(
+      "touchmove",
+      () => {
+        if (tutorial.active) {
+          tutorial.programmaticScrollUntil = 0;
+          tutorial.userScrollIntentUntil = Date.now() + 900;
+        }
+      },
+      { passive: true }
+    );
+
+    // Pre/post-resize scroll discrimination
+    window.addEventListener(
+      "scroll",
+      () => {
+        if (!tutorial.active) return;
+        const now = Date.now();
+        const curW = window.innerWidth || 0;
+        const curH = window.innerHeight || 0;
+        if (curW !== tutorial.lastViewportW || curH !== tutorial.lastViewportH) {
+          tutorial.lastViewportW = curW;
+          tutorial.lastViewportH = curH;
+          tutorial.resizeIgnoreScrollUntil = now + 450;
+          return;
+        }
+        if (now < tutorial.resizeIgnoreScrollUntil || now < tutorial.programmaticScrollUntil) {
+          return;
+        }
+        if (now <= tutorial.userScrollIntentUntil) {
+          const curY = Math.round(window.scrollY || 0);
+          if (Math.abs(curY - tutorial.lastGuidedScrollY) > 20) {
+            tutorial.userScrolledAway = true;
+          }
+        }
+      },
+      { passive: true }
+    );
+
+    // Genuine user scroll intent tracking inside product-detail modal scroll container
+    const detailDlg = document.querySelector("#detail-modal .modal-dialog");
+    if (detailDlg) {
+      const markModalUserScrollIntent = () => {
+        if (!tutorial.active) return;
+        tutorial.modalProgrammaticScrollUntil = 0;
+        tutorial.modalUserScrollIntentUntil = Date.now() + 900;
+      };
+      detailDlg.addEventListener("wheel", markModalUserScrollIntent, { passive: true });
+      detailDlg.addEventListener("touchmove", markModalUserScrollIntent, { passive: true });
+      detailDlg.addEventListener("pointerdown", markModalUserScrollIntent, { passive: true });
+      detailDlg.addEventListener(
+        "scroll",
+        () => {
+          if (!tutorial.active) return;
+          const now = Date.now();
+          if (now < tutorial.resizeIgnoreScrollUntil || now < tutorial.modalProgrammaticScrollUntil) {
+            return;
+          }
+          if (now <= tutorial.modalUserScrollIntentUntil) {
+            const curTop = Math.round(detailDlg.scrollTop || 0);
+            if (Math.abs(curTop - tutorial.modalLastGuidedScrollTop) > 12) {
+              tutorial.modalUserScrolledAway = true;
+              tutorial.userScrolledAway = true;
+            }
+          }
+        },
+        { passive: true }
+      );
+    }
+
+    // Manual dashboard interactions safely pause autoplay without leaving isolated tutorial session
+    const mainEl = document.getElementById("main-content");
+    if (mainEl) {
+      mainEl.addEventListener("pointerdown", (ev) => {
+        if (!tutorial.active || !tutorial.playing || tutorial.driving) return;
+        const dock = document.getElementById("tutorialDock");
+        if (dock && dock.contains(ev.target)) return;
+        pauseTutorial();
+      });
+    }
+    document.querySelectorAll(".nav-tab").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (tutorial.active && tutorial.playing && !tutorial.driving) {
+          pauseTutorial();
+        }
+      });
+    });
+  }
+
+  // Read-only verification & inspection API
+  window.__NBASHOP_TUTORIAL__ = {
+    getState() {
+      const stage = TUTORIAL_STAGES[tutorial.stageIndex];
+      const dock = document.getElementById("tutorialDock");
+      return {
+        active: tutorial.active,
+        playing: tutorial.playing,
+        completed: tutorial.completed,
+        stageIndex: tutorial.stageIndex,
+        stageId: stage ? stage.id : null,
+        totalStages: TUTORIAL_STAGES.length,
+        preSubActionDone: tutorial.preSubActionDone,
+        subActionDone: tutorial.subActionDone,
+        preSecondSubActionDone: tutorial.preSecondSubActionDone,
+        secondSubActionDone: tutorial.secondSubActionDone,
+        modalPhase: tutorial.modalPhase,
+        actionStatusText: tutorial.actionStatusText,
+        hasPendingTimers: tutorial.subTimers.length > 0 || tutorial.advanceTimer !== null,
+        userScrolledAway: tutorial.userScrolledAway,
+        modalUserScrolledAway: tutorial.modalUserScrolledAway,
+        lastGuidedScrollY: tutorial.lastGuidedScrollY,
+        modalLastGuidedScrollTop: tutorial.modalLastGuidedScrollTop,
+        activeTargetSelector: tutorial.activeTargetSelector,
+        resolvedFocusSelector: tutorial.resolvedFocusSelector,
+        persistenceSuspended: tutorialPersistenceSuspended,
+        orderPlacedNumber: tutorial.orderPlacedNumber,
+        activeView: state.view,
+        cartUnits: cartUnitCount(),
+        ordersCount: state.orders.length,
+        messagesCount: state.messages.length,
+        demoUser: state.demoUser ? state.demoUser.username : null,
+        product1Stock: getProduct(1) ? getProduct(1).stock : null,
+        adaptiveLayout: Object.assign({}, tutorial.adaptiveLayout),
+        requiredVisibility:
+          tutorial.active && dock && stage ? getStageRequiredVisibility(dock, stage) : null,
+        modalVisibility: tutorial.active && dock ? getModalVisibilitySnapshot(dock) : null,
+        adminVisibility: tutorial.active && dock ? getAdminVisibilitySnapshot(dock) : null,
+      };
+    },
+    stages: TUTORIAL_STAGES.map((s) => ({
+      id: s.id,
+      view: s.view,
+      targetSelector: s.targetSelector,
+      requiredSelectors: (s.requiredSelectors || []).slice(),
+      title: s.title,
+      hasSubAction: typeof s.subAction === "function",
+    })),
+  };
+
   updateHeader();
   initEvents();
+  initTutorialEvents();
   renderHome();
 })();

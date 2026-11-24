@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640">
+  <defs>
+    <linearGradient id="spBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#101113"/>
+      <stop offset="56%" stop-color="#15161B"/>
+      <stop offset="100%" stop-color="#211617"/>
+    </linearGradient>
+    <radialGradient id="spBronze" cx="14%" cy="10%" r="50%">
+      <stop offset="0%" stop-color="#B49A78" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#B49A78" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="spCourt" cx="85%" cy="22%" r="52%">
+      <stop offset="0%" stop-color="#CF6E58" stop-opacity="0.24"/>
+      <stop offset="100%" stop-color="#CF6E58" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="spRule" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#B49A78"/>
+      <stop offset="60%" stop-color="#E59866"/>
+      <stop offset="100%" stop-color="#CF6E58"/>
+    </linearGradient>
+    <linearGradient id="spJersey" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#B91C1C"/>
+      <stop offset="100%" stop-color="#881313"/>
+    </linearGradient>
+    <linearGradient id="spSneaker" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563EB"/>
+      <stop offset="100%" stop-color="#1E40AF"/>
+    </linearGradient>
+    <filter id="spShadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <rect width="1280" height="640" fill="url(#spBg)"/>
+  <rect width="1280" height="640" fill="url(#spBronze)"/>
+  <rect width="1280" height="640" fill="url(#spCourt)"/>
+  <rect width="1280" height="4" fill="url(#spRule)"/>
+
+  <!-- Subtle court geometry -->
+  <g fill="none" stroke="#F1EDE5" stroke-opacity="0.035" stroke-width="2">
+    <circle cx="1040" cy="320" r="250"/>
+    <circle cx="1040" cy="320" r="88"/>
+  </g>
+
+  <!-- Left Editorial Column (Optimized for crisp 320x160 thumbnail legibility!) -->
+  <g transform="translate(68, 66)">
+    <rect x="0" y="0" width="38" height="38" rx="9" fill="#171A20" stroke="#B49A78" stroke-opacity="0.55" stroke-width="1.5"/>
+    <circle cx="19" cy="19" r="10" fill="none" stroke="#E59866" stroke-width="2"/>
+    <path d="M9.5 19 H28.5 M19 9.5 V28.5" fill="none" stroke="#B49A78" stroke-width="1.35" stroke-linecap="round"/>
+    <text x="52" y="25" fill="#B49A78" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" font-weight="700" letter-spacing="2.2">PORTFOLIO SHOWCASE · STATIC DEMO</text>
+  </g>
+
+  <g transform="translate(68, 206)">
+    <text x="0" y="0" fill="#F1EDE5" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif" font-size="88" font-weight="800" letter-spacing="-2.5">NBA<tspan fill="#D2BA98" font-family="Georgia, 'Times New Roman', serif" font-style="italic" font-weight="400">SHOP</tspan></text>
+    <text x="2" y="52" fill="#E4DFD5" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif" font-size="25" font-weight="600">Basketball Storefront &amp; Security Audit</text>
+    <text x="2" y="90" fill="#9E9A92" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif" font-size="19">14 synthetic SKUs · Original SVG art · Watch Tutorial</text>
+  </g>
+
+  <!-- Bold Traceable Badges -->
+  <g transform="translate(68, 338)">
+    <rect x="0" y="0" width="244" height="102" rx="12" fill="#16181D" stroke="#F1EDE5" stroke-opacity="0.12"/>
+    <text x="18" y="28" fill="#758D92" font-family="ui-monospace, Menlo, monospace" font-size="12" font-weight="700" letter-spacing="1.2">SYNTHETIC STOREFRONT</text>
+    <text x="18" y="64" fill="#F1EDE5" font-family="ui-monospace, Menlo, monospace" font-size="28" font-weight="700">14 SKUs</text>
+    <text x="18" y="88" fill="#9E9A92" font-family="-apple-system, sans-serif" font-size="14">12 Categories · Original SVG</text>
+
+    <rect x="260" y="0" width="248" height="102" rx="12" fill="#16181D" stroke="#34D399" stroke-opacity="0.38"/>
+    <text x="278" y="28" fill="#6EE7B7" font-family="ui-monospace, Menlo, monospace" font-size="12" font-weight="700" letter-spacing="1.2">PRIVATE PHP/MYSQL AUDIT</text>
+    <text x="278" y="64" fill="#6EE7B7" font-family="ui-monospace, Menlo, monospace" font-size="28" font-weight="700">17/17 CI</text>
+    <text x="278" y="88" fill="#9E9A92" font-family="-apple-system, sans-serif" font-size="14">14/14 Static · PHP 8.3</text>
+  </g>
+
+  <!-- Clear Non-Shop Disclosure Pill -->
+  <g transform="translate(68, 520)">
+    <rect x="0" y="0" width="508" height="48" rx="24" fill="#16181D" stroke="#CF6E58" stroke-opacity="0.48"/>
+    <circle cx="24" cy="24" r="6" fill="#CF6E58"/>
+    <text x="42" y="29" fill="#E4DFD5" font-family="ui-monospace, Menlo, monospace" font-size="13.5" font-weight="600">SYNTHETIC CATALOG · NO PAYMENTS · NON-NBA</text>
+  </g>
+
+  <!-- Right Composite: 2 Large Crisp Product Plinths + Security Summary -->
+  <g transform="translate(626, 60)" filter="url(#spShadow)">
+    <rect x="0" y="0" width="586" height="330" rx="18" fill="#16181D" stroke="#B49A78" stroke-opacity="0.45" stroke-width="1.4"/>
+    <text x="24" y="34" fill="#D2BA98" font-family="ui-monospace, Menlo, monospace" font-size="13" font-weight="700" letter-spacing="1.4">ORIGINAL VECTOR MERCHANDISE · CART &amp; RECEIPT</text>
+    <line x1="24" y1="48" x2="562" y2="48" stroke="#F1EDE5" stroke-opacity="0.08"/>
+
+    <!-- Jersey Plinth -->
+    <g transform="translate(24, 66)">
+      <rect x="0" y="0" width="258" height="240" rx="13" fill="#111318" stroke="#F1EDE5" stroke-opacity="0.1"/>
+      <rect x="12" y="12" width="234" height="156" rx="9" fill="#F5F4F0"/>
+      <circle cx="129" cy="90" r="58" fill="#EDF1FF"/>
+      <g transform="translate(52, 8) scale(0.6)">
+        <path d="M88 44 L112 44 C118 66 142 66 148 44 L172 44 L186 78 C174 96 172 118 178 134 L184 222 L76 222 L82 134 C88 118 86 96 74 78 Z" fill="url(#spJersey)" stroke="#18181B" stroke-width="3.4"/>
+        <path d="M110 44 C118 70 142 70 150 44" fill="none" stroke="#F8FAFC" stroke-width="4.5"/>
+        <text x="130" y="106" text-anchor="middle" fill="#F8FAFC" font-family="-apple-system, sans-serif" font-weight="700" font-size="15">APEX</text>
+        <text x="130" y="168" text-anchor="middle" fill="#F8FAFC" stroke="#18181B" stroke-width="2" font-family="-apple-system, sans-serif" font-weight="800" font-size="52">23</text>
+      </g>
+      <text x="14" y="196" fill="#F1EDE5" font-family="-apple-system, sans-serif" font-size="16" font-weight="700">Apex Crimson #23</text>
+      <text x="14" y="222" fill="#D2BA98" font-family="ui-monospace, Menlo, monospace" font-size="18" font-weight="700">$119.00</text>
+      <text x="242" y="222" text-anchor="end" fill="#758D92" font-family="ui-monospace, Menlo, monospace" font-size="12" font-weight="600">34 IN STOCK</text>
+    </g>
+
+    <!-- Sneaker Plinth -->
+    <g transform="translate(304, 66)">
+      <rect x="0" y="0" width="258" height="240" rx="13" fill="#111318" stroke="#F1EDE5" stroke-opacity="0.1"/>
+      <rect x="12" y="12" width="234" height="156" rx="9" fill="#F5F4F0"/>
+      <circle cx="129" cy="90" r="58" fill="#EDF1FF"/>
+      <g transform="translate(42, 4) scale(0.66)">
+        <path d="M50 162 L66 108 L98 92 L124 114 C146 124 186 128 208 148 C214 156 214 168 206 174 L54 174 C48 172 48 166 50 162 Z" fill="url(#spSneaker)" stroke="#0F172A" stroke-width="3"/>
+        <path d="M46 170 L212 170 C214 182 204 192 186 192 L60 192 C48 192 44 182 46 170 Z" fill="#FFFFFF" stroke="#1E293B" stroke-width="3"/>
+        <path d="M84 152 L144 134 L178 152" fill="none" stroke="#F59E0B" stroke-width="5.5" stroke-linecap="round"/>
+      </g>
+      <text x="14" y="196" fill="#F1EDE5" font-family="-apple-system, sans-serif" font-size="16" font-weight="700">Skyline Sneakers</text>
+      <text x="14" y="222" fill="#D2BA98" font-family="ui-monospace, Menlo, monospace" font-size="18" font-weight="700">$159.00</text>
+      <text x="242" y="222" text-anchor="end" fill="#758D92" font-family="ui-monospace, Menlo, monospace" font-size="12" font-weight="600">22 IN STOCK</text>
+    </g>
+  </g>
+
+  <!-- Bottom Right Security Matrix Strip -->
+  <g transform="translate(626, 414)" filter="url(#spShadow)">
+    <rect x="0" y="0" width="586" height="162" rx="18" fill="#16181D" stroke="#34D399" stroke-opacity="0.38" stroke-width="1.4"/>
+    <text x="24" y="38" fill="#F1EDE5" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="20" font-weight="700">Security Hardening &amp; Isolated Tutorial</text>
+    <text x="24" y="66" fill="#6EE7B7" font-family="ui-monospace, Menlo, monospace" font-size="14" font-weight="700">SQLi · CSRF · XSS · IDOR · Safe Upload · .htaccess 403</text>
+    <text x="24" y="102" fill="#CFCAC0" font-family="-apple-system, sans-serif" font-size="16">10-Stage Guided Walkthrough · Isolated Session State</text>
+    <text x="24" y="132" fill="#9A968E" font-family="-apple-system, sans-serif" font-size="14">Simulated checkout preview (DEMO-ORDER-0001) · Zero card/IBAN fields</text>
+  </g>
+</svg>

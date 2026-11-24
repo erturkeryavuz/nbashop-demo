@@ -16,21 +16,81 @@
 <body>
   <a class="skip-link" href="#main-content">Skip to storefront content</a>
 
-  <!-- Honest Portfolio & Non-Affiliation Disclosure Bar -->
-  <div class="demo-ribbon" role="region" aria-label="Simulation and non-affiliation disclosure">
-    <div class="container ribbon-inner">
-      <div class="ribbon-left">
-        <span class="ribbon-badge">STATIC DEMO</span>
-        <span>Synthetic catalog &amp; simulated checkout &middot; <strong>Not affiliated with the NBA</strong> &middot; <strong>No live payments</strong></span>
+  <!-- Primary Portfolio V3 Topbar -->
+  <div class="portfolio-topbar" role="banner">
+    <div class="container topbar-inner">
+      <div class="topbar-left">
+        <a class="back-link" href="https://erturkeryavuz.netlify.app/" target="_blank" rel="noopener noreferrer">&larr; Back to Portfolio</a>
+        <span class="topbar-sep" aria-hidden="true"></span>
+        <div class="pf-brand">
+          <svg class="pf-brand-mark" viewBox="0 0 36 36" width="32" height="32" aria-hidden="true">
+            <rect x="1" y="1" width="34" height="34" rx="8" fill="#171A20" stroke="#B49A78" stroke-opacity="0.48" stroke-width="1.3" />
+            <circle cx="18" cy="18" r="9.5" fill="none" stroke="#E59866" stroke-width="1.9" />
+            <path d="M8.8 18 H27.2 M18 8.8 V27.2 M11.5 11.4 C15.2 15.2 15.2 20.8 11.5 24.6 M24.5 11.4 C20.8 15.2 20.8 20.8 24.5 24.6" fill="none" stroke="#B49A78" stroke-width="1.35" stroke-linecap="round" />
+          </svg>
+          <div>
+            <div class="pf-brand-title-row">
+              <span class="pf-brand-name">NBASHOP</span>
+              <span class="pf-badge mono">STATIC DEMO</span>
+            </div>
+            <p class="pf-brand-sub">Basketball E-Commerce &amp; PHP/MySQL Security Showcase</p>
+          </div>
+        </div>
       </div>
-      <div class="ribbon-right">
-        <a href="notices.html">Notices &amp; Licensing</a>
-        <a href="https://github.com/erturkeryavuz/nbashop-demo" target="_blank" rel="noopener noreferrer">Demo Repo</a>
+
+      <div class="pf-actions">
+        <button type="button" class="btn-tutorial" id="btnWatchTutorial" aria-controls="tutorialDock" aria-expanded="false">
+          &#9654; Watch Tutorial
+        </button>
+        <a class="btn-pf-ghost" href="notices.html">Notices</a>
+        <a class="btn-pf-outline" href="https://github.com/erturkeryavuz/nbashop-demo" target="_blank" rel="noopener noreferrer">
+          GitHub &#8599;
+        </a>
       </div>
     </div>
   </div>
 
-  <!-- Storefront Header -->
+  <!-- Editorial Portfolio V3 Project Hero -->
+  <section class="portfolio-hero" aria-labelledby="pfHeroHeading">
+    <div class="container pf-hero-grid">
+      <div class="pf-hero-copy">
+        <p class="pf-hero-kicker">E-Commerce Architecture &amp; Security &middot; Synthetic Storefront</p>
+        <h1 id="pfHeroHeading" class="pf-hero-title">NBA<em>SHOP</em></h1>
+        <p class="pf-hero-desc">
+          A sanitized basketball merchandise storefront and security-audit showcase built over 12 source categories, 14 synthetic SKUs, and original inline vector artwork. Launch the guided tutorial in an isolated session or browse the storefront, cart, non-payment checkout, and Admin &amp; Security audit directly.
+        </p>
+      </div>
+      <aside class="pf-hero-meta" aria-label="Project summary">
+        <div class="pf-meta-item">
+          <span class="pf-meta-label">Catalog &amp; Flows</span>
+          <span class="pf-meta-value">12 Categories &middot; 14 Synthetic SKUs &middot; Stock-Bounded Cart</span>
+        </div>
+        <div class="pf-meta-item">
+          <span class="pf-meta-label">Private Backend Audit</span>
+          <span class="pf-meta-value">14/14 Static &middot; 17/17 CI Runtime Security Tests</span>
+        </div>
+        <div class="pf-meta-item">
+          <span class="pf-meta-label">Simulation Boundary</span>
+          <span class="pf-meta-value">Zero Real Payments &middot; Not Affiliated with NBA</span>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- Honest Portfolio & Non-Affiliation Disclosure Bar -->
+  <div class="demo-ribbon" role="region" aria-label="Simulation and non-affiliation disclosure">
+    <div class="container ribbon-inner">
+      <div class="ribbon-left">
+        <span class="ribbon-badge mono">STATIC DEMO</span>
+        <span>Synthetic catalog &amp; simulated checkout &middot; <strong>Not affiliated with the NBA</strong> &middot; <strong>No live payments</strong></span>
+      </div>
+      <div class="ribbon-right">
+        <span class="ribbon-meta">Private PHP/MySQL source &middot; Original vector SVG art</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Storefront Utility Header & Primary 6-Tab Navigation -->
   <header class="site-header">
     <div class="container header-main">
       <a class="brand-wordmark" href="#home" data-nav="home">
@@ -49,7 +109,7 @@
         </button>
         <button type="button" class="btn btn-cart" id="cart-trigger" data-nav="cart" aria-label="Open shopping cart">
           <span>Cart</span>
-          <span class="cart-pill" id="header-cart-badge">0</span>
+          <span class="cart-pill mono" id="header-cart-badge">0</span>
         </button>
       </div>
     </div>
@@ -58,12 +118,13 @@
     <div class="nav-strip">
       <div class="container">
         <nav class="main-nav" role="tablist" aria-label="NBASHOP storefront sections">
-          <button type="button" class="nav-tab active" role="tab" id="tab-home" aria-selected="true" aria-controls="view-home" data-view="home">Home</button>
-          <button type="button" class="nav-tab" role="tab" id="tab-shop" aria-selected="false" aria-controls="view-shop" data-view="shop" tabindex="-1">Shop Catalog</button>
-          <button type="button" class="nav-tab" role="tab" id="tab-cart" aria-selected="false" aria-controls="view-cart" data-view="cart" tabindex="-1">Shopping Cart</button>
-          <button type="button" class="nav-tab" role="tab" id="tab-checkout" aria-selected="false" aria-controls="view-checkout" data-view="checkout" tabindex="-1">Checkout Preview</button>
-          <button type="button" class="nav-tab" role="tab" id="tab-contact" aria-selected="false" aria-controls="view-contact" data-view="contact" tabindex="-1">Contact</button>
-          <button type="button" class="nav-tab" role="tab" id="tab-admin" aria-selected="false" aria-controls="view-admin" data-view="admin" tabindex="-1">Admin &amp; Security</button>
+          <span class="nav-label mono">Storefront</span>
+          <button type="button" class="nav-tab active" role="tab" id="tab-home" aria-selected="true" aria-controls="view-home" data-view="home">1. Home</button>
+          <button type="button" class="nav-tab" role="tab" id="tab-shop" aria-selected="false" aria-controls="view-shop" data-view="shop" tabindex="-1">2. Shop Catalog</button>
+          <button type="button" class="nav-tab" role="tab" id="tab-cart" aria-selected="false" aria-controls="view-cart" data-view="cart" tabindex="-1">3. Shopping Cart</button>
+          <button type="button" class="nav-tab" role="tab" id="tab-checkout" aria-selected="false" aria-controls="view-checkout" data-view="checkout" tabindex="-1">4. Checkout Preview</button>
+          <button type="button" class="nav-tab" role="tab" id="tab-contact" aria-selected="false" aria-controls="view-contact" data-view="contact" tabindex="-1">5. Contact</button>
+          <button type="button" class="nav-tab" role="tab" id="tab-admin" aria-selected="false" aria-controls="view-admin" data-view="admin" tabindex="-1">6. Admin &amp; Security</button>
         </nav>
       </div>
     </div>
@@ -72,9 +133,33 @@
   <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
 
   <main id="main-content" class="container main-content">
+    <!-- Interactive Watch Tutorial Dock (Isolated Synthetic Session) -->
+    <section id="tutorialDock" class="tutorial-dock" aria-label="Guided tutorial controls" hidden>
+      <div class="tutorial-dock-top">
+        <div class="tutorial-meta">
+          <span id="tutorialStepBadge" class="tutorial-step-badge mono">Stage 1 / 10</span>
+          <span id="tutorialStateBadge" class="tutorial-state-badge mono">Playing</span>
+          <h2 id="tutorialStageTitle" class="tutorial-stage-title">Storefront Overview &amp; Featured Merchandise</h2>
+        </div>
+        <div class="tutorial-controls" role="group" aria-label="Tutorial playback controls">
+          <button id="btnTutPrev" class="tut-btn tut-btn-ghost" type="button">&larr; Previous</button>
+          <button id="btnTutPlayPause" class="tut-btn tut-btn-primary" type="button" aria-pressed="true">Pause</button>
+          <button id="btnTutNext" class="tut-btn tut-btn-ghost" type="button">Next &rarr;</button>
+          <button id="btnTutRestart" class="tut-btn tut-btn-ghost" type="button">Restart</button>
+          <button id="btnTutExit" class="tut-btn tut-btn-outline" type="button">Exit / Explore Manually</button>
+        </div>
+      </div>
+      <div class="tutorial-progress-track" role="progressbar" id="tutorialProgress" aria-label="Tutorial progress" aria-valuemin="1" aria-valuemax="10" aria-valuenow="1">
+        <div id="tutorialProgressFill" class="tutorial-progress-fill" style="width: 10%;"></div>
+      </div>
+      <p id="tutorialNarration" class="tutorial-narration" aria-live="polite"></p>
+      <div id="tutorialActionStatus" class="tutorial-action-status mono" role="status" aria-live="polite" hidden></div>
+    </section>
+    <div id="srAnnouncer" class="sr-only" aria-live="assertive"></div>
+
     <!-- ==================== VIEW 1: HOME (EShopper Layout) ==================== -->
     <section id="view-home" class="view-panel active" role="tabpanel" aria-labelledby="tab-home">
-      <div class="hero-layout">
+      <div id="home-hero-layout" class="hero-layout">
         <!-- Left Vertical 12-Category Rail -->
         <aside class="category-rail" aria-label="Storefront product categories">
           <div class="rail-header">Categories (12)</div>
@@ -93,7 +178,7 @@
       </div>
 
       <!-- Value Strip (Original EShopper Storefront Highlights) -->
-      <div class="highlights-grid">
+      <div id="home-highlights" class="highlights-grid">
         <div class="highlight-card">
           <strong>12 Source Categories</strong>
           <span>Mirrors original PHP <code>categories</code> structure</span>
@@ -118,8 +203,8 @@
 
     <!-- ==================== VIEW 2: SHOP CATALOG ==================== -->
     <section id="view-shop" class="view-panel" role="tabpanel" aria-labelledby="tab-shop" hidden>
-      <div class="shop-layout">
-        <aside class="filter-sidebar card-panel" aria-label="Catalog filters">
+      <div id="shop-layout" class="shop-layout">
+        <aside id="shop-filter-sidebar" class="filter-sidebar card-panel" aria-label="Catalog filters">
           <div class="filter-head">
             <h2>Filter Catalog</h2>
             <button type="button" class="btn-link" id="reset-filters-btn">Reset</button>
@@ -152,8 +237,8 @@
           </fieldset>
         </aside>
 
-        <div class="shop-results">
-          <div class="shop-toolbar">
+        <div id="shop-results" class="shop-results">
+          <div id="shop-toolbar" class="shop-toolbar">
             <div class="results-summary" id="shop-count">Showing 0 synthetic products</div>
             <div class="sort-wrap">
               <label for="shop-sort">Sort by</label>
@@ -174,8 +259,8 @@
 
     <!-- ==================== VIEW 3: SHOPPING CART ==================== -->
     <section id="view-cart" class="view-panel" role="tabpanel" aria-labelledby="tab-cart" hidden>
-      <div class="cart-layout">
-        <div class="card-panel">
+      <div id="cart-layout" class="cart-layout">
+        <div id="cart-items-card" class="card-panel">
           <div class="panel-title-row">
             <h2>Shopping Cart</h2>
             <span class="tag-pill">Simulated Local State</span>
@@ -196,7 +281,7 @@
           </div>
         </div>
 
-        <aside class="card-panel summary-card">
+        <aside id="cart-summary-card" class="card-panel summary-card">
           <h3>Cart Summary</h3>
           <div class="summary-row">
             <span>Subtotal</span>
@@ -287,7 +372,7 @@
           </button>
         </form>
 
-        <aside class="card-panel summary-card">
+        <aside id="checkout-summary-card" class="card-panel summary-card">
           <h3>Order Summary</h3>
           <div id="checkout-summary-items"></div>
           <div class="summary-row">
@@ -320,7 +405,7 @@
 
     <!-- ==================== VIEW 5: CONTACT ==================== -->
     <section id="view-contact" class="view-panel" role="tabpanel" aria-labelledby="tab-contact" hidden>
-      <div class="cart-layout">
+      <div id="contact-layout" class="cart-layout">
         <form id="contact-form" class="card-panel">
           <div class="panel-title-row">
             <h2>Contact Storefront (Simulated)</h2>
@@ -369,7 +454,8 @@
         synthetic browser state. All metrics reflect simulated fixture/session totals &mdash; not real business revenue.
       </div>
 
-      <div class="kpi-strip">
+      <div id="admin-overview-zone">
+      <div id="admin-kpi-strip" class="kpi-strip">
         <div class="kpi-box">
           <div class="kpi-lbl">Simulated Order Volume</div>
           <div class="kpi-val" id="adm-sales">$191.00</div>
@@ -388,16 +474,16 @@
         </div>
       </div>
 
-      <div class="two-col">
-        <section class="card-panel">
+      <div id="admin-two-col" class="two-col">
+        <section id="admin-stock-card" class="card-panel">
           <h3>Category Stock Distribution</h3>
           <div class="bar-list" id="adm-category-bars"></div>
         </section>
 
-        <section class="card-panel">
+        <section id="admin-orders-card" class="card-panel">
           <h3>Simulated Orders &amp; Inquiries</h3>
           <h4 class="sub-heading">Recent Demo Orders</h4>
-          <div class="table-scroll table-compact">
+          <div id="adm-orders-wrap" class="table-scroll table-compact">
             <table class="clean-table">
               <thead>
                 <tr><th>Order #</th><th>Customer</th><th class="num">Total</th><th>Est. Delivery</th></tr>
@@ -405,19 +491,22 @@
               <tbody id="adm-orders-body"></tbody>
             </table>
           </div>
-          <h4 class="sub-heading" style="margin-top: 16px;">Admin Inbox Messages</h4>
-          <div class="table-scroll table-compact">
-            <table class="clean-table">
-              <thead>
-                <tr><th>From</th><th>Subject</th><th>Message</th></tr>
-              </thead>
-              <tbody id="adm-messages-body"></tbody>
-            </table>
+          <div id="admin-inbox-section" class="admin-inbox-section">
+            <h4 id="admin-inbox-heading" class="sub-heading" style="margin-top: 16px;">Admin Inbox Messages</h4>
+            <div id="adm-messages-wrap" class="table-scroll table-compact">
+              <table class="clean-table">
+                <thead>
+                  <tr><th>From</th><th>Subject</th><th>Message</th></tr>
+                </thead>
+                <tbody id="adm-messages-body"></tbody>
+              </table>
+            </div>
           </div>
         </section>
       </div>
+      </div>
 
-      <section class="card-panel" style="margin-top: 18px;">
+      <section id="admin-security-card" class="card-panel" style="margin-top: 18px;">
         <div class="panel-title-row">
           <h3>Phase A Security Remediation &amp; Verification Matrix</h3>
           <span class="tag-pill tag-ok">17/17 CI Runtime &amp; 14/14 Offline Tests Passing</span>
@@ -456,18 +545,22 @@
     </div>
   </div>
 
-  <!-- Footer (Preserving HTML Codex CC-BY 4.0 Attribution) -->
+  <!-- Footer (Portfolio V3 Consistent Footer + Preserving HTML Codex CC-BY 4.0 Attribution) -->
   <footer class="site-footer">
     <div class="container footer-inner">
-      <div>
+      <div class="footer-links">
+        <a href="https://erturkeryavuz.netlify.app/" target="_blank" rel="noopener noreferrer">&larr; Back to Portfolio</a>
+        <span class="footer-sep" aria-hidden="true">&middot;</span>
+        <a href="notices.html">Third-Party Notices</a>
+        <span class="footer-sep" aria-hidden="true">&middot;</span>
+        <a href="THIRD-PARTY-NOTICES.md">Notices (Markdown)</a>
+        <span class="footer-sep" aria-hidden="true">&middot;</span>
+        <a href="https://github.com/erturkeryavuz/nbashop-demo" target="_blank" rel="noopener noreferrer">Demo Repository</a>
+      </div>
+      <div class="footer-meta">
         <strong>NBASHOP</strong> &middot; Independent Student Portfolio Showcase by Ert&uuml;rk Eryavuz &middot;
         Not affiliated with the NBA or any sports brand &middot; Storefront visual heritage adapted from EShopper by
         <a href="https://htmlcodex.com" target="_blank" rel="noopener noreferrer">HTML Codex</a> (CC-BY 4.0).
-      </div>
-      <div class="footer-links">
-        <a href="notices.html">Third-Party Notices</a>
-        <a href="THIRD-PARTY-NOTICES.md">Notices (Markdown)</a>
-        <a href="https://github.com/erturkeryavuz/nbashop-demo" target="_blank" rel="noopener noreferrer">Demo Repository</a>
       </div>
     </div>
   </footer>
